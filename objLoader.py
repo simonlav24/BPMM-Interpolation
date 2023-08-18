@@ -73,7 +73,6 @@ class Model:
             for vt in self.vertices_texture:
                 new_vt = (vt[0] / max_vt_x, vt[1] / max_vt_x)
                 new_vertex_textures.append(new_vt)
-                print(new_vt)
             self.vertices_texture = new_vertex_textures
         
         # create for drawing arrays
@@ -91,7 +90,6 @@ class Model:
             _vertices.append(v1)
             _vertices.append(v2)
             _vertices.append(v3)
-            # print(len(_vertices))
             
             _vertices_texture.append(vt1)
             _vertices_texture.append(vt2)
