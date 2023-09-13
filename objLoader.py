@@ -1,5 +1,6 @@
-
 import numpy as np
+from rotatetoalign import *
+from mobius import *
 
 class Model:
     def __init__(self):
@@ -99,8 +100,73 @@ class Model:
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
         
-        
-        
+        # try to find mobiuses
+        mobius_transforms_for_faces = []
+        for face_index, face in enumerate(self.faces):
+            # print(f'face {face_index}: {face}')
+            # print(self.get_neighbors(face_index))
+            
+            # calculcate normal of the face
+            vertices = [np.array(self.vertices[face[i]['v']]) for i in range(3)]
+            v1 = vertices[1] - vertices[0]
+            v2 = vertices[2] - vertices[0]
+            normal = np.cross(v1, v2)
+            normal = normal / np.linalg.norm(normal)
+            # print(vertices)
+            # print(normal)
+            
+            n = normal
+            z = np.array([0, 0, 1])
+            v = np.cross(n, z)
+            # print(f'{v=}')
+            s = np.linalg.norm(v)
+            c = np.dot(n, z)
+            
+            I = np.identity(3)
+            V_x = np.array([[0    , -v[2],  v[1]],
+                            [ v[2], 0    , -v[0]],
+                            [-v[1],  v[0], 0    ]])
+            
+            last_part = (1 - c) / (s * s)
+            # print(last_part)
+            
+            rotation_matrix = I + V_x + np.dot(V_x, V_x) * last_part
+            # print(rotation_matrix)
+            
+            # rotate the triangle so that it will be flat on z
+            middle_rotated = [np.dot(rotation_matrix, i) for i in vertices]
+            # print(middle_rotated)
+            # this is the final middle triangle we can omit the z.
+            
+            # neighbors:
+            neighbors_faces_indices = self.get_neighbors(face_index)
+            neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+            
+            # rotate the neighbors
+            rotated_neighbors = []
+            for neighbor in neighbors_vertices:
+                rotated_neighbor = [np.dot(rotation_matrix, i) for i in neighbor]
+                rotated_neighbors.append(rotated_neighbor)
+
+            # rotate every neighbor along connecting edge
+            # print('neighbors before:')
+            # print(rotated_neighbors)
+            rotated_flat_neighbors = []
+            for neighbor in rotated_neighbors:
+                neighbor_along = rotate_to_align(middle_rotated, neighbor)
+                rotated_flat_neighbors.append(neighbor_along)
+                # print(neighbor_along)
+            # print('neighbors after:')
+            # print(rotated_flat_neighbors)
+            
+            # find mobius transforms:
+            # middle
+            # middle_vts = [i for ]
+            # findMobiusTransform(middle_rotated[0][:-1], middle_rotated[1][:-1], middle_rotated[2][:-1], )
+            
+            
+
+            # quit(0)
 
 if __name__ == '__main__':
     import pygame

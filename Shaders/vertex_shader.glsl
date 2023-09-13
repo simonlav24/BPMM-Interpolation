@@ -3,6 +3,10 @@
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
+
+// should have 3 matrices of complex. maybe vectors of length 8
+
+
 attribute vec3 aVertex;
 attribute vec2 aTexCoord;
 

@@ -208,14 +208,18 @@ if __name__ == "__main__":
             run = False
         
         # model_matrix = np.dot(model_matrix, rotate(1, 1, 0.5, 0)) # rotate the model by changing its matrix
-        model_matrix = np.dot(model_matrix, transformations.scale(1))
+        # model_matrix = np.dot(model_matrix, transformations.scale(1))
 
+
+        # DRAW
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT) # clear the color and depth buffer
 
+        # draw model
         glVertexAttribPointer(aVertex, 3, GL_FLOAT, GL_FALSE, 0, model.vertices_for_drawing) # link aVertex attribute to model vertices
         glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, model.vertices_texture_for_drawing) # link aTexCoord attribute to model tex coords
 
-        mv_matrix = np.dot(model_matrix, view_matrix) # ??
+        mv_matrix = np.dot(model_matrix, view_matrix) # create modelview matrix
+        # link shaders uniforms
         glUniformMatrix4fv(uMVMatrix, 1, GL_FALSE, mv_matrix) # the uniform var uMVMatrix is now linked to mv_matrix
         glUniformMatrix4fv(uPMatrix, 1, GL_FALSE, projection_matrix) # the uniform var uPMatrix is now linked to projection_matrix
 
