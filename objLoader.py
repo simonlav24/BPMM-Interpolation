@@ -105,9 +105,9 @@ class Model:
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
         
-        ####
-        ####  mobius part
-        ####
+        ##########################################################
+        #                      Mobius Area
+        ##########################################################
 
         # try to find mobiuses
         mobius_transforms_for_faces = []
@@ -206,7 +206,32 @@ class Model:
             # 4. get everything ready for mobius calculations
             ##########################################################
 
-            triangle_t_2d = middle_rotated
+            neighbors_textures = [np.array([self.vertices_texture[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+
+            triangle_t_vec_2d = middle_rotated
+            triangle_t_tex_2d = [np.array(self.vertices_texture[face[i]['v']]) for i in range(3)]
+
+            triangle_u_vec_2d = rotated_flat_neighbors[0]
+            triangle_u_tex_2d = neighbors_textures[0]
+
+            triangle_v_vec_2d = rotated_flat_neighbors[1]
+            triangle_v_tex_2d = neighbors_textures[1]
+
+            triangle_w_vec_2d = rotated_flat_neighbors[2]
+            triangle_w_tex_2d = neighbors_textures[2]
+
+            M_t = findMobiusTransform(triangle_t_vec_2d[0], triangle_t_vec_2d[1], triangle_t_vec_2d[2], triangle_t_tex_2d[0], triangle_t_tex_2d[1], triangle_t_tex_2d[2])
+            M_u = findMobiusTransform(triangle_u_vec_2d[0], triangle_u_vec_2d[1], triangle_u_vec_2d[2], triangle_u_tex_2d[0], triangle_u_tex_2d[1], triangle_u_tex_2d[2])
+            M_v = findMobiusTransform(triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2], triangle_v_tex_2d[0], triangle_v_tex_2d[1], triangle_v_tex_2d[2])
+            M_w = findMobiusTransform(triangle_w_vec_2d[0], triangle_w_vec_2d[1], triangle_w_vec_2d[2], triangle_w_tex_2d[0], triangle_w_tex_2d[1], triangle_w_tex_2d[2])
+
+            print(type(M_t))
+
+            ##########################################################
+            # 5. 
+            ##########################################################
+
+
 
         check_point = []
 
