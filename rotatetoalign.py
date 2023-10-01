@@ -75,6 +75,10 @@ def check_for_triangle_intersection(t1, t2):
     return False
 
 def check_if_point_inside_triangle(point, triangle):
+    for p in triangle:
+        if np.isclose(p[0], point[0]) and np.isclose(p[1], point[1]):
+            return False
+
     def sign(p1, p2, p3):
         return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
 
@@ -96,7 +100,7 @@ def check_if_any_point_inside_triangle(t1, t2):
 def check_if_triangles_on_different_orientation(triangle, potential_neighbor, odd_point):
     if check_for_triangle_intersection(triangle, potential_neighbor):
         return False
-    if check_if_point_inside_triangle(odd_point, triangle):
+    if check_if_any_point_inside_triangle(potential_neighbor, triangle):
         return False
     return True
 
@@ -200,7 +204,7 @@ def rotate_to_align(triangle, neighbor):
     # print(polygon_to_desmos_2d(potential_neighbor1))
     # print(polygon_to_desmos_2d(potential_neighbor2))
 
-    Drawer([triangle, potential_neighbor1, potential_neighbor2], [intersection_points[0], intersection_points[1]])
+    # Drawer([triangle, potential_neighbor1, potential_neighbor2], [intersection_points[0], intersection_points[1]])
     check1 = check_if_triangles_on_different_orientation(triangle, potential_neighbor1, intersection_points[0])
     check2 = check_if_triangles_on_different_orientation(triangle, potential_neighbor2, intersection_points[1])
 
@@ -338,24 +342,38 @@ if __name__ == '__main__':
     if test_intersecting_edges:
         e1 = ((-4.33, 7.55), (1.68, -0.93))
         e2 = ((-1, -6.65), (5.3, 2.23))
-        print(check_for_edge_intersection(e1, e2))
+        # print(check_for_edge_intersection(e1, e2))
         assert check_for_edge_intersection(e1, e2) == False
 
         e1 = ((4.67,3.43), (-1.9,-5.68))
         e2 = ((-3,-5), (3.67,4.53))
-        print(check_for_edge_intersection(e1, e2))
+        # print(check_for_edge_intersection(e1, e2))
         assert check_for_edge_intersection(e1, e2) == False
 
         e1 = ((5.44,8.2), (1.93,-4.4))
         e2 = ((5,-5), (2.8,3.54))
-        print(check_for_edge_intersection(e1, e2))
+        # print(check_for_edge_intersection(e1, e2))
         assert check_for_edge_intersection(e1, e2) == True
 
         a, b, c, d = uniform(-30,30), uniform(-30,30), uniform(-30,30), uniform(-30,30)
         e1 = ((a, b), (c, d))
         e2 = ((a, b), (c, d))
-        print(check_for_edge_intersection(e1, e2))
+        # print(check_for_edge_intersection(e1, e2))
         assert check_for_edge_intersection(e1, e2) == False
 
         # test for 'check_if_any_point_inside_triangle' and for 'check_if_point_inside_triangle' for points that are on the triangle
-        check_if_any_point_inside_triangle()
+        t1 = [(-2, 4), (5.7, -2.7), (8.8, 12.2)]
+        t2 = [(-2, 4), (5.7, -2.7), (8.8, 12.2)]
+        # print(check_if_any_point_inside_triangle(t1, t2))
+        # assert check_if_any_point_inside_triangle(t1, t2) == True
+        assert check_if_point_inside_triangle((-2, 4.0), t1) == False
+        assert check_if_point_inside_triangle((8.800, 12.200), t2) == False
+
+        t1 = [(-2, 4), (5.7, -2.7), (8.8, 12.2)]
+        t2 = [(-2, 4), (10, -15), (8.8, 12.2)]
+        # print(check_if_any_point_inside_triangle(t1, t2))
+        assert check_if_any_point_inside_triangle(t1, t2) == True
+        assert check_if_point_inside_triangle((5.7, -2.7), t1) == False
+        assert check_if_point_inside_triangle((-2, 4), t2) == False
+
+        

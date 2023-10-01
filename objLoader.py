@@ -169,7 +169,7 @@ class Model:
                 rotated_neighbor = [np.dot(rotation_matrix, i) for i in neighbor]
                 rotated_neighbors.append(rotated_neighbor)
 
-            if DESMOS_PRINT and True:
+            if DESMOS_PRINT and False:
                 print('<current neighbors>')
                 print(polygon_to_desmos(middle_rotated))
                 for n in rotated_neighbors:
@@ -184,26 +184,29 @@ class Model:
             # rotate every neighbor along connecting edge
             # print('neighbors before:')
             # print(rotated_neighbors)
-            if DESMOS_PRINT and False:
-                print(polygon_to_desmos(middle_rotated))
-                for n in rotated_flat_neighbors:
-                    print(polygon_to_desmos(n))
             
             # Drawer(triangles_to_draw=rotated_neighbors, file='1')
 
             rotated_flat_neighbors = []
             for i, neighbor in enumerate(rotated_neighbors):
-                print(f'Iteration {i}')
+                # print(f'Iteration {i}')
                 neighbor_along = rotate_to_align(middle_rotated, neighbor)
                 rotated_flat_neighbors.append(neighbor_along)
 
             # Drawer(triangles_to_draw=rotated_flat_neighbors, file='2')
 
             if DESMOS_PRINT and False:
-                print(polygon_to_desmos(middle_rotated))
+                print('<aligned neighbors>')
+                print(polygon_to_desmos_2d(middle_rotated))
                 for n in rotated_flat_neighbors:
-                    print(polygon_to_desmos(n))
+                    print(polygon_to_desmos_2d(n))
+                print('</aligned neighbors>')
 
+            ##########################################################
+            # 4. get everything ready for mobius calculations
+            ##########################################################
+
+            triangle_t_2d = middle_rotated
 
         check_point = []
 
