@@ -2,6 +2,7 @@ import numpy as np
 from rotatetoalign import *
 from mobius import *
 from desmos_tools import *
+from drawer_helper import Drawer
 
 DESMOS_PRINT = True
 
@@ -168,43 +169,43 @@ class Model:
                 rotated_neighbor = [np.dot(rotation_matrix, i) for i in neighbor]
                 rotated_neighbors.append(rotated_neighbor)
 
-            if DESMOS_PRINT and False:
+            if DESMOS_PRINT and True:
+                print('<current neighbors>')
                 print(polygon_to_desmos(middle_rotated))
                 for n in rotated_neighbors:
                     print(polygon_to_desmos(n))
+                print('</current neighbors>')
             
 
             ##########################################################
-            # 3. rotate the neighbors to be aligned on z (verified in desmos)
+            # 3. rotate the neighbors to be aligned on z plane (verified in desmos)
             ##########################################################
 
             # rotate every neighbor along connecting edge
             # print('neighbors before:')
             # print(rotated_neighbors)
+            if DESMOS_PRINT and False:
+                print(polygon_to_desmos(middle_rotated))
+                for n in rotated_flat_neighbors:
+                    print(polygon_to_desmos(n))
+            
+            # Drawer(triangles_to_draw=rotated_neighbors, file='1')
+
             rotated_flat_neighbors = []
-            for neighbor in rotated_neighbors:
+            for i, neighbor in enumerate(rotated_neighbors):
+                print(f'Iteration {i}')
                 neighbor_along = rotate_to_align(middle_rotated, neighbor)
                 rotated_flat_neighbors.append(neighbor_along)
 
-            if DESMOS_PRINT and True:
+            # Drawer(triangles_to_draw=rotated_flat_neighbors, file='2')
+
+            if DESMOS_PRINT and False:
                 print(polygon_to_desmos(middle_rotated))
                 for n in rotated_flat_neighbors:
                     print(polygon_to_desmos(n))
 
-            check_point = []
 
-                # print(neighbor_along)
-            # print('neighbors after:')
-            # print(rotated_flat_neighbors)
-            
-            # find mobius transforms:
-            # middle
-            # middle_vts = [i for ]
-            # findMobiusTransform(middle_rotated[0][:-1], middle_rotated[1][:-1], middle_rotated[2][:-1], )
-            
-            
-
-            # quit(0)
+        check_point = []
 
 if __name__ == '__main__':
     import pygame
