@@ -1,6 +1,9 @@
 import numpy as np
 from rotatetoalign import *
 from mobius import *
+from desmos_tools import *
+
+DESMOS_PRINT = True
 
 class Model:
     def __init__(self):
@@ -26,7 +29,7 @@ class Model:
         return self.neighbors[face_index]
         
     def load_obj(self, path, normalize_texture=False):
-        max_vt_x = 0.0
+        max_vt_x = 0.0 # normalizers for textures that > 1.0
         max_vt_y = 0.0
         with open(path, 'r') as file:
             for line in file.readlines():
@@ -70,13 +73,14 @@ class Model:
             self.neighbors.append(face_neighbors)
         
         if normalize_texture:
+            # normalize textures when vt > 1.0
             new_vertex_textures = []
             for vt in self.vertices_texture:
                 new_vt = (vt[0] / max_vt_x, vt[1] / max_vt_x)
                 new_vertex_textures.append(new_vt)
             self.vertices_texture = new_vertex_textures
         
-        # create for drawing arrays
+        # create for drawing arrays -> will change to new taignles and new vertices
         _vertices = []
         _vertices_texture = []
         for face in self.faces:
@@ -100,9 +104,17 @@ class Model:
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
         
+        ####
+        ####  mobius part
+        ####
+
         # try to find mobiuses
         mobius_transforms_for_faces = []
         for face_index, face in enumerate(self.faces):
+            '''
+            face is: [{'v': index, 'vt': index}, {'v': index, 'vt': index}, {'v': index, 'vt': index}]
+            '''
+
             # print(f'face {face_index}: {face}')
             # print(self.get_neighbors(face_index))
             
@@ -130,10 +142,13 @@ class Model:
             last_part = (1 - c) / (s * s)
             # print(last_part)
             
+            ##########################################################
+            # 1. rotate the triangle so that it will be flat on z
+            ##########################################################
+
             rotation_matrix = I + V_x + np.dot(V_x, V_x) * last_part
             # print(rotation_matrix)
-            
-            # rotate the triangle so that it will be flat on z
+
             middle_rotated = [np.dot(rotation_matrix, i) for i in vertices]
             # print(middle_rotated)
             # this is the final middle triangle we can omit the z.
@@ -141,12 +156,27 @@ class Model:
             # neighbors:
             neighbors_faces_indices = self.get_neighbors(face_index)
             neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+            # neighbors_vertices are list of 3 np.array with their actual vertices
             
-            # rotate the neighbors
+            ##########################################################
+            # 2. rotate the neighbors to be in the same area as the middle. not yet rotated to be aligned on z
+            ##########################################################
+
+            # rotate the neighbors with the same rotation used for middle triangle
             rotated_neighbors = []
             for neighbor in neighbors_vertices:
                 rotated_neighbor = [np.dot(rotation_matrix, i) for i in neighbor]
                 rotated_neighbors.append(rotated_neighbor)
+
+            if DESMOS_PRINT and False:
+                print(polygon_to_desmos(middle_rotated))
+                for n in rotated_neighbors:
+                    print(polygon_to_desmos(n))
+            
+
+            ##########################################################
+            # 3. rotate the neighbors to be aligned on z (verified in desmos)
+            ##########################################################
 
             # rotate every neighbor along connecting edge
             # print('neighbors before:')
@@ -155,6 +185,14 @@ class Model:
             for neighbor in rotated_neighbors:
                 neighbor_along = rotate_to_align(middle_rotated, neighbor)
                 rotated_flat_neighbors.append(neighbor_along)
+
+            if DESMOS_PRINT and True:
+                print(polygon_to_desmos(middle_rotated))
+                for n in rotated_flat_neighbors:
+                    print(polygon_to_desmos(n))
+
+            check_point = []
+
                 # print(neighbor_along)
             # print('neighbors after:')
             # print(rotated_flat_neighbors)
