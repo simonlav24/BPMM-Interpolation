@@ -74,83 +74,16 @@ def load_texture(filename):
 
     return texture
 
-"""
-_vertices = [
-    ( 1.000000, -1.000000, -1.000000),
-    ( 1.000000, -1.000000,  1.000000),
-    (-1.000000, -1.000000,  1.000000),
-    (-1.000000, -1.000000, -1.000000),
-    ( 1.000000,  1.000000, -0.999999),
-    ( 0.999999,  1.000000,  1.000001),
-    (-1.000000,  1.000000,  1.000000),
-    (-1.000000,  1.000000, -1.000000),
-]
-
-_texcoords = [
-    (0.250043, 0.749957),
-    (0.250043, 0.500000),
-    (0.500000, 0.500000),
-    (0.500000, 0.250043),
-    (0.250043, 0.250043),
-    (0.250044, 0.000087),
-    (0.500000, 0.999913),
-    (0.250043, 0.999913),
-    (0.000087, 0.749956),
-    (0.000087, 0.500000),
-    (0.500000, 0.749957),
-    (0.749957, 0.500000),
-    (0.500000, 0.000087),
-    (0.749957, 0.749957),
-]
-_vertex_triangles = [
-    (1, 2, 3),
-    (7, 6, 5),
-    (4, 5, 1),
-    (5, 6, 2),
-    (2, 6, 7),
-    (0, 3, 7),
-    (0, 1, 3),
-    (4, 7, 5),
-    (0, 4, 1),
-    (1, 5, 2),
-    (3, 2, 7),
-    (4, 0, 7),
-]
-
-_texture_triangles = [
-    ( 0,  1,  2),
-    ( 3,  4,  5),
-    ( 6,  7,  0),
-    ( 8,  9,  1),
-    ( 1,  4,  3),
-    (10,  2, 11),
-    (10,  0,  2),
-    (12,  3,  5),
-    (10,  6,  0),
-    ( 0,  8,  1),
-    ( 2,  1,  3),
-    (13, 10, 11),
-]
-
-vertices = np.array([
-    _vertices[index]
-    for indices in _vertex_triangles
-    for index in indices
-])
-
-texcoords = np.array([
-    _texcoords[index]
-    for indices in _texture_triangles
-    for index in indices
-])
-"""
-
-
-# model = Model3D()
-# model.create_default_cube()
 
 model = Model()
 model.load_obj('./wolf_head_fixed.obj')
+
+divide_factor = 4
+divided_model = model.create_divided_mobius_model(divide_factor)
+divided_model.save_obj(f'divided_{divide_factor}.obj')
+
+model = Model()
+model.load_obj(f'divided_{divide_factor}.obj')
 
 if __name__ == "__main__":
     width, height = 800, 600

@@ -131,12 +131,13 @@ class Model:
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
         
+    def create_divided_mobius_model(self, divide_factor):
+
         ##########################################################
         #                      Mobius Area
         ##########################################################
 
         divided_model = Model()
-        divide_factor = 5
 
         vertex_index = 0
         face_index = 0
@@ -369,18 +370,8 @@ class Model:
                     f2 = {'v': vertex_index, 'vt': vertex_index}
                     vertex_index += 1
                     divided_model.faces.append((f0, f1, f2))
-        
 
-
-        # todo: remove this redundant vt
-        divided_model.vertices_texture.append((0,0))
-        divided_model.save_obj(f'divided_{divide_factor}.obj')
-            
-
-
-
-
-        check_point = []
+        return divided_model
 
 if __name__ == '__main__':
     import pygame
