@@ -6,6 +6,10 @@ from drawer_helper import Drawer
 
 DESMOS_PRINT = True
 
+def print_if(cond, text):
+    if cond:
+        print(text)
+
 class Model:
     def __init__(self):
         self.vertices = [] # at index (x, y, z)
@@ -145,27 +149,24 @@ class Model:
         face_index = 0
 
         # try to find mobiuses
-        length_of_faces = len(self.faces)
         for face_index, face in enumerate(self.faces):
+            print_if(face_index == 170, f'<face: {face_index}>')
             '''
             face is: [{'v': index, 'vt': index}, {'v': index, 'vt': index}, {'v': index, 'vt': index}]
             '''
-            # print(f'face {face_index}: {face}')
-            # print(self.get_neighbors(face_index))
             
             # calculcate normal of the face
             vertices = np.array([np.array(self.vertices[face[i]['v']]) for i in range(3)])
+            print_if(face_index == 170, f'\t<vertices: {vertices}>')
+            
             v1 = vertices[1] - vertices[0]
             v2 = vertices[2] - vertices[0]
             normal = np.cross(v1, v2)
             normal = normal / np.linalg.norm(normal)
-            # print(vertices)
-            # print(normal)
             
             n = normal
             z = np.array([0, 0, 1])
             v = np.cross(n, z)
-            # print(f'{v=}')
             s = np.linalg.norm(v)
             c = np.dot(n, z)
             
@@ -175,17 +176,14 @@ class Model:
                             [-v[1],  v[0], 0    ]])
             
             last_part = (1 - c) / (s * s)
-            # print(last_part)
             
             ##########################################################
             # 1. rotate the triangle so that it will be flat on z
             ##########################################################
 
             rotation_matrix = I + V_x + np.dot(V_x, V_x) * last_part
-            # print(rotation_matrix)
 
             middle_rotated = np.array([np.dot(rotation_matrix, i) for i in vertices])
-            # print(middle_rotated)
             # this is the final middle triangle we can omit the z.
             
             # neighbors:
@@ -205,38 +203,16 @@ class Model:
                 rotated_neighbor = np.array([np.dot(rotation_matrix, i) for i in neighbor])
                 rotated_neighbors.append(rotated_neighbor)
 
-            if DESMOS_PRINT and False:
-                print('<current neighbors>')
-                print(polygon_to_desmos(middle_rotated))
-                for n in rotated_neighbors:
-                    print(polygon_to_desmos(n))
-                print('</current neighbors>')
-            
-
             ##########################################################
             # 3. rotate the neighbors to be aligned on z plane (verified in desmos)
             ##########################################################
 
             # rotate every neighbor along connecting edge
-            # print('neighbors before:')
-            # print(rotated_neighbors)
-            
-            # Drawer(triangles_to_draw=rotated_neighbors, file='1')
-
             rotated_flat_neighbors = []
             for i, neighbor in enumerate(rotated_neighbors):
                 # print(f'Iteration {i}')
                 neighbor_along = rotate_to_align(middle_rotated, neighbor)
                 rotated_flat_neighbors.append(neighbor_along)
-
-            # Drawer(triangles_to_draw=rotated_flat_neighbors, file='2')
-
-            if DESMOS_PRINT and False:
-                print('<aligned neighbors>')
-                print(polygon_to_desmos_2d(middle_rotated))
-                for n in rotated_flat_neighbors:
-                    print(polygon_to_desmos_2d(n))
-                print('</aligned neighbors>')
 
             ##########################################################
             # 4. get everything ready for mobius calculations
@@ -246,6 +222,10 @@ class Model:
 
             triangle_t_vec_2d = middle_rotated
             triangle_t_tex_2d = np.array([np.array(self.vertices_texture[face[i]['v']]) for i in range(3)])
+            print_if(face_index == 170, f'\t<vertices textures: {triangle_t_tex_2d}>')
+            if face_index == 170: debug_triangles = [triangle_t_vec_2d]
+            if face_index == 170: debug_triangles_points = []
+            if face_index == 170: debug_points = [i for i in triangle_t_tex_2d]
 
             triangle_u_vec_2d = rotated_flat_neighbors[0]
             triangle_u_tex_2d = neighbors_textures[0]
@@ -345,6 +325,9 @@ class Model:
                         new_c = new_a + step_bc
                         mobius_new_c = mobius_new_a + mobius_step_bc
                     
+                    if face_index == 170: debug_triangles_points.append(mobius_new_a)
+                    if face_index == 170: debug_triangles_points.append(mobius_new_b)
+                    if face_index == 170: debug_triangles_points.append(mobius_new_c)
                     vt_a = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_a))
                     vt_b = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_b))
                     vt_c = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_c))
@@ -370,6 +353,11 @@ class Model:
                         if np.isnan(vt_c[0]): vt_c[0] = 0
                         if np.isnan(vt_c[1]): vt_c[1] = 0
 
+                    print_if(face_index == 170, f'\t<new textures: {(vt_a, vt_b, vt_c)}>')
+                    if face_index == 170: debug_points.append(vt_a)
+                    if face_index == 170: debug_points.append(vt_b)
+                    if face_index == 170: debug_points.append(vt_c)
+
                     divided_model.vertices.append(new_a)
                     divided_model.vertices_texture.append(vt_a)
                     f0 = {'v': vertex_index, 'vt': vertex_index}
@@ -383,6 +371,12 @@ class Model:
                     f2 = {'v': vertex_index, 'vt': vertex_index}
                     vertex_index += 1
                     divided_model.faces.append((f0, f1, f2))
+
+
+            print_if(face_index == 170, f'<face/>')
+            if face_index == 170:
+                Drawer(triangles_to_draw=[triangle_t_tex_2d], points_to_draw=debug_points, file='texture_points')
+                Drawer(triangles_to_draw=debug_triangles, points_to_draw=debug_triangles_points, file='vertices')
 
         print('Done: create_and_divivde')
         return divided_model

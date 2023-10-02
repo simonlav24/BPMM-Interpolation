@@ -77,6 +77,9 @@ def exp_matrix(mat: np.ndarray) -> np.ndarray:
     # normalize eigenvectors
     v1norm = np.sqrt(v1x * v1x + v1y * v1y)
     v2norm = np.sqrt(v2x * v2x + v2y * v2y)
+    # print('norm exp:', v1norm, v2norm)
+    # if np.isnan(v1norm):
+        # print(0)
     v1x /= v1norm
     v1y /= v1norm
     v2x /= v2norm
@@ -113,6 +116,7 @@ def log_matrix(mat: np.ndarray) -> np.ndarray:
     # normalize eigenvectors
     v1norm = np.sqrt(v1x * v1x + v1y * v1y)
     v2norm = np.sqrt(v2x * v2x + v2y * v2y)
+    # print('norm log:', v1norm, v2norm)
     v1x /= v1norm
     v1y /= v1norm
     v2x /= v2norm
@@ -255,6 +259,23 @@ def test_multiply():
     c = a * b
     d = np.matmul(a, b)
 
+def test_exp_mat():
+    mat = np.array([
+        [8, -7],
+        [1, 0]
+        ])
+    exponented = exp_matrix(mat)
+
+    symbolab_exponented = np.array([
+        [1278.952305, -1276.234023],
+        [182.3191461, -179.6008643]
+        ])
+    
+    np_exponented = np.exp(mat)
+
+    assert np.allclose(exponented, symbolab_exponented, 0.0001)
+    assert not np.allclose(exponented, np_exponented, 0.0001)
+    print(0)
 
 if __name__ == '__main__':
     
@@ -262,6 +283,7 @@ if __name__ == '__main__':
     test_np_inv()
     test_multiply()
 
+    test_exp_mat()
 
 
     checkpoint = 0
