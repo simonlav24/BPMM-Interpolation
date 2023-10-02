@@ -60,10 +60,6 @@ def transform(z: complex, mat):
     
     return (a * z + b) / (c * z + d)
 
-def mobius_ratio(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    ''' a, b are complex matrix 2x2 UNCHEKED '''
-    return a * np.linalg.inv(b)
-
 def exp_matrix(mat: np.ndarray) -> np.ndarray:
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]
@@ -137,7 +133,7 @@ def log_matrix(mat: np.ndarray) -> np.ndarray:
     return result
 
 def log_ratio_interpolator(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    mobius_ratio = a * np.linalg.inv(b)
+    mobius_ratio = np.matmul(a, np.linalg.inv(b))
 
     real = np.real(mobius_ratio)
 
@@ -209,7 +205,7 @@ def log_ratio_interpolator_primary(edge_i: complex, edge_j: complex, edge_k: com
 
     halved = l_t * 0.5
 
-    interpolator_O = exp_matrix(halved) * t
+    interpolator_O = np.matmul(exp_matrix(halved), t) #mat multiply
 
     return interpolator_O
 
@@ -219,7 +215,6 @@ def log_ratio_interpolator_primary_and_transform(edge_i: complex, edge_j: comple
 
     return transform(z, interpolator_O)
 
-
 def test_mobius():
     mat = findMobiusTransform((-1,3), (6,9), (9,-1), (7, 3), (12,9), (12,1))
     
@@ -227,10 +222,51 @@ def test_mobius():
     assert(cmath.isclose(transform(6+9j, mat), 12+9j))
     assert(cmath.isclose(transform(9-1j, mat), 12+1j))
     
+def test_np_inv():
+    matrix = np.array([
+            [1+2j, 3+4j],
+            [5+6j, 7+8j]
+            ])
+    
+    ad = (1+2j) * (7+8j)
+    bc = (3+4j) * (5+6j)
+    den = 1/(ad - bc)
+
+    inv = den * np.array([
+            [matrix[1][1], -matrix[0][1]],
+            [-matrix[1][0], matrix[0][0]]
+            ])
+    
+    inv_np = np.linalg.inv(matrix)
+
+    assert np.allclose(inv_np, inv)
+
+def test_multiply():
+    a = np.array([
+        [1, 2],
+        [3, 4]
+    ])
+
+    b = np.array([
+        [5, 4],
+        [3, 2]
+    ])
+
+    c = a * b
+    d = np.matmul(a, b)
+
 
 if __name__ == '__main__':
     
     test_mobius()
+    test_np_inv()
+    test_multiply()
+
+
+
+    checkpoint = 0
+
+
 
 
 

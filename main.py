@@ -74,16 +74,29 @@ def load_texture(filename):
 
     return texture
 
+load_and_divide = False
 
-model = Model()
-model.load_obj('./wolf_head_fixed.obj')
+if load_and_divide:
+    model = Model()
+    model.load_obj('./wolf_head_fixed.obj')
 
-divide_factor = 4
-divided_model = model.create_divided_mobius_model(divide_factor)
-divided_model.save_obj(f'divided_{divide_factor}.obj')
+    TEXTURE_PATH = "checker-map_tho.png"
+    # TEXTURE_PATH = "texture.png"
 
-model = Model()
-model.load_obj(f'divided_{divide_factor}.obj')
+    divide_factor = 6
+    divided_model = model.create_divided_mobius_model(divide_factor)
+    divided_model.save_obj(f'divided_{divide_factor}.obj')
+
+    model = Model()
+    model.load_obj(f'divided_{divide_factor}.obj')
+
+else:
+    model = Model()
+    model.load_obj('./wolf_head_fixed.obj')
+
+    TEXTURE_PATH = "checker-map_tho.png"
+
+
 
 if __name__ == "__main__":
     width, height = 800, 600
@@ -114,7 +127,7 @@ if __name__ == "__main__":
     glEnableVertexAttribArray(aVertex) # enable the attrib for rendering
     glEnableVertexAttribArray(aTexCoord) # enable the attrib for rendering
 
-    texture = load_texture("texture.png")
+    texture = load_texture(TEXTURE_PATH)
 
     glActiveTexture(GL_TEXTURE0) # select the texture unit GL_TEXTURE0 (the first texture unit)
     glBindTexture(GL_TEXTURE_2D, texture) # bind it to texture we just loaded

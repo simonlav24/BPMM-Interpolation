@@ -52,6 +52,7 @@ class Model:
 
         with open(path, 'w+') as file:
             file.write(output)
+        print('Done: save object')
         
     def load_obj(self, path, normalize_texture=False):
         max_vt_x = 0.0 # normalizers for textures that > 1.0
@@ -130,6 +131,7 @@ class Model:
 
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
+        print('Done: load object')
         
     def create_divided_mobius_model(self, divide_factor):
 
@@ -143,11 +145,11 @@ class Model:
         face_index = 0
 
         # try to find mobiuses
+        length_of_faces = len(self.faces)
         for face_index, face in enumerate(self.faces):
             '''
             face is: [{'v': index, 'vt': index}, {'v': index, 'vt': index}, {'v': index, 'vt': index}]
             '''
-
             # print(f'face {face_index}: {face}')
             # print(self.get_neighbors(face_index))
             
@@ -347,15 +349,26 @@ class Model:
                     vt_b = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_b))
                     vt_c = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_c))
 
-                    vt_a = complex_to_vec(vt_a)
-                    if np.isnan(vt_a[0]): vt_a[0] = 0
-                    if np.isnan(vt_a[1]): vt_a[1] = 0
-                    vt_b = complex_to_vec(vt_b)
-                    if np.isnan(vt_b[0]): vt_b[0] = 0
-                    if np.isnan(vt_b[1]): vt_b[1] = 0
-                    vt_c = complex_to_vec(vt_c)
-                    if np.isnan(vt_c[0]): vt_c[0] = 0
-                    if np.isnan(vt_c[1]): vt_c[1] = 0
+                    if np.allclose(mobius_new_a, mobius_a):
+                        vt_a = triangle_t_tex_2d[0]
+                    else:
+                        vt_a = complex_to_vec(vt_a)
+                        if np.isnan(vt_a[0]): vt_a[0] = 0
+                        if np.isnan(vt_a[1]): vt_a[1] = 0
+
+                    if np.allclose(mobius_new_b, mobius_b):
+                        vt_b = triangle_t_tex_2d[1]
+                    else:
+                        vt_b = complex_to_vec(vt_b)
+                        if np.isnan(vt_b[0]): vt_b[0] = 0
+                        if np.isnan(vt_b[1]): vt_b[1] = 0
+                    
+                    if np.allclose(mobius_new_c, mobius_c):
+                        vt_c = triangle_t_tex_2d[2]
+                    else:
+                        vt_c = complex_to_vec(vt_c)
+                        if np.isnan(vt_c[0]): vt_c[0] = 0
+                        if np.isnan(vt_c[1]): vt_c[1] = 0
 
                     divided_model.vertices.append(new_a)
                     divided_model.vertices_texture.append(vt_a)
@@ -371,6 +384,7 @@ class Model:
                     vertex_index += 1
                     divided_model.faces.append((f0, f1, f2))
 
+        print('Done: create_and_divivde')
         return divided_model
 
 if __name__ == '__main__':
