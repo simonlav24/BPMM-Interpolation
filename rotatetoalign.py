@@ -126,7 +126,7 @@ def find_intersection_points(x1, y1, r1, x2, y2, r2):
         y4 = y3 - h * (x2 - x1) / d
         x5 = x3 - h * (y2 - y1) / d
         y5 = y3 + h * (x2 - x1) / d
-        return (x4, y4), (x5, y5)
+        return np.array([x4, y4]), np.array([x5, y5])
 
 def rotate_to_align(triangle, neighbor):
     result = []
@@ -185,20 +185,24 @@ def rotate_to_align(triangle, neighbor):
 
     # create the potential neighbors. this method should ensure that the index order is correct
     edge_vertices_out = edge_vertices.copy()
+    edge_vertices_out = [arr[:-1] for arr in edge_vertices_out]
     potential_neighbor1 = []
     for i in range(3):
         if i == odd_vertex_index:
             potential_neighbor1.append(intersection_points[0])
         else:
             potential_neighbor1.append(edge_vertices_out.pop(0))
+    potential_neighbor1 = np.array(potential_neighbor1)
 
     edge_vertices_out = edge_vertices.copy()
+    edge_vertices_out = [arr[:-1] for arr in edge_vertices_out]
     potential_neighbor2 = []
     for i in range(3):
         if i == odd_vertex_index:
             potential_neighbor2.append(intersection_points[1])
         else:
             potential_neighbor2.append(edge_vertices_out.pop(0))
+    potential_neighbor2 = np.array(potential_neighbor2)
 
     # print(polygon_to_desmos_2d(triangle))
     # print(polygon_to_desmos_2d(potential_neighbor1))
@@ -215,7 +219,22 @@ def rotate_to_align(triangle, neighbor):
     else:
         return potential_neighbor2
 
-
+def get_shared_point(t, n1, n2):
+    hist = [[t[0], 0], [t[1], 0], [t[2], 0]]
+    for i, point_to_check in enumerate(t):
+        for point_on_n1 in n1:
+            if np.isclose(point_to_check[0], point_on_n1[0]) and np.isclose(point_to_check[1], point_on_n1[1]):
+                hist[i][1] += 1
+        for point_on_n2 in n2:
+            if np.isclose(point_to_check[0], point_on_n2[0]) and np.isclose(point_to_check[1], point_on_n2[1]):
+                hist[i][1] += 1
+    if hist[0][1] == 2:
+        return t[0]
+    if hist[1][1] == 2:
+        return t[1]
+    if hist[2][1] == 2:
+        return t[2]
+    return None
 
 def rotate_to_align_not_working_2(triangle, neighbor):
     t = triangle
@@ -326,7 +345,7 @@ def rotate_to_align_not_working(triangle, neighbor):
     assert(result[0][2] == result[1][2] and result[0][2] == result[2][2])
     
     return result
-    
+
 
 if __name__ == '__main__':
 

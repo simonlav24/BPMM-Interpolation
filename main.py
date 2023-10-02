@@ -150,7 +150,7 @@ texcoords = np.array([
 # model.create_default_cube()
 
 model = Model()
-model.load_obj('./wolf_head.obj', True)
+model.load_obj('./wolf_head_fixed.obj')
 
 if __name__ == "__main__":
     width, height = 800, 600

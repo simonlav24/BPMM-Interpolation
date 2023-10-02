@@ -2,11 +2,14 @@ import cmath
 import numpy as np
 EPSILON = 1e-5
 
+def to_complex(vec2):
+    return vec2[0] + vec2[1] * 1j
+
+def complex_to_vec(c: complex) -> np.ndarray:
+    return np.array([np.real(c), np.imag(c)])
+
 def findMobiusTransform(z1, z2, z3, w1, w2, w3):
     """ inputs are vec2 (tuples) returns a mobius matrix 2x2 complex"""
-    
-    def to_complex(vec2):
-        return vec2[0] + vec2[1] * 1j
     
     matA = np.array([
         [ to_complex(z1) * to_complex(w1), to_complex(w1), 1.0],
@@ -49,7 +52,7 @@ def findMobiusTransform(z1, z2, z3, w1, w2, w3):
         [c, d]
     ])
 
-def transform(z, mat):
+def transform(z: complex, mat):
     a = mat[0, 0]
     b = mat[0, 1]
     c = mat[1, 0]
@@ -64,7 +67,7 @@ def mobius_ratio(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 def exp_matrix(mat: np.ndarray) -> np.ndarray:
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]
-    determinant = mat[0][0] * mat[1][1] - max[0][1] * mat[1][0]
+    determinant = mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]
     discriminant = np.sqrt(trace * trace - 4.0 * determinant)
     lambda1 = (trace - discriminant) / 2.0
     lambda2 = (trace + discriminant) / 2.0
@@ -100,7 +103,7 @@ def exp_matrix(mat: np.ndarray) -> np.ndarray:
 def log_matrix(mat: np.ndarray) -> np.ndarray:
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]
-    determinant = mat[0][0] * mat[1][1] - max[0][1] * mat[1][0]
+    determinant = mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]
     discriminant = np.sqrt(trace * trace - 4.0 * determinant)
     lambda1 = (trace - discriminant) / 2.0
     lambda2 = (trace + discriminant) / 2.0
@@ -136,7 +139,7 @@ def log_matrix(mat: np.ndarray) -> np.ndarray:
 def log_ratio_interpolator(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     mobius_ratio = a * np.linalg.inv(b)
 
-    real = np.real(mobius_ratio) # UNCHEKED
+    real = np.real(mobius_ratio)
 
     trace = np.real(np.trace(real))
 
@@ -156,10 +159,65 @@ def r_distance(edge1: complex, edge2: complex, z: complex) -> float:
     x2 = np.real(edge2)
     y2 = np.imag(edge2)
 
+    a = (x2 - x1)
+    b = (y1 - y0)
+
+    c = (x1 - x0)
+    d = (y2 - y1)
+
     up = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1))
     down = np.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 
     return up / down
+
+def gamma_func(edge_i: complex, edge_j: complex, edge_k: complex, z: complex):
+    r_ij = r_distance(edge_i, edge_j, z)
+    r_ki = r_distance(edge_k, edge_i, z)
+    r_jk = r_distance(edge_j, edge_k, z)
+
+    s = (r_jk * r_ki) + (r_ij * r_jk) + (r_ij * r_ki)
+
+    return (r_ij, r_ki, r_jk, s)
+
+def gamma_ij(edge_i: complex, edge_j: complex, edge_k: complex, z: complex) -> float:
+    r_ij, r_ki, r_jk, s = gamma_func(edge_i, edge_j, edge_k, z)
+
+    if abs(s) < 0.00001:
+        return 0.0
+    return (r_jk * r_ki) / s
+
+def gamma_jk(edge_i: complex, edge_j: complex, edge_k: complex, z: complex) -> float:
+    r_ij, r_ki, r_jk, s = gamma_func(edge_i, edge_j, edge_k, z)
+
+    if abs(s) < 0.00001:
+        return 0.0
+    return (r_ij * r_ki) / s
+
+def gamma_ki(edge_i: complex, edge_j: complex, edge_k: complex, z: complex) -> float:
+    r_ij, r_ki, r_jk, s = gamma_func(edge_i, edge_j, edge_k, z)
+
+    if abs(s) < 0.00001:
+        return 0.0
+    return (r_ij * r_jk) / s
+
+def log_ratio_interpolator_primary(edge_i: complex, edge_j: complex, edge_k: complex, t: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.ndarray, z: complex) -> np.ndarray:
+    g_ij = gamma_ij(edge_i, edge_j, edge_k, z)
+    g_jk = gamma_jk(edge_i, edge_j, edge_k, z)
+    g_ki = gamma_ki(edge_i, edge_j, edge_k, z)
+
+    l_t = log_ratio_interpolator(u, t) * g_ij + log_ratio_interpolator(v, t) * g_jk + log_ratio_interpolator(w, t) * g_ki
+
+    halved = l_t * 0.5
+
+    interpolator_O = exp_matrix(halved) * t
+
+    return interpolator_O
+
+def log_ratio_interpolator_primary_and_transform(edge_i: complex, edge_j: complex, edge_k: complex, t: np.ndarray, u: np.ndarray, v: np.ndarray, w: np.ndarray, z: complex) -> complex:
+
+    interpolator_O = log_ratio_interpolator_primary(edge_i, edge_j, edge_k, t, u, v, w, z)
+
+    return transform(z, interpolator_O)
 
 
 def test_mobius():

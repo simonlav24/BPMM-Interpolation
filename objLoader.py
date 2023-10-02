@@ -28,6 +28,30 @@ class Model:
     
     def get_neighbors(self, face_index):
         return self.neighbors[face_index]
+    
+    def save_obj(self, path):
+        output = '\n'
+        for v in self.vertices:
+            output += f'v {v[0]} {v[1]} {v[2]}\n'
+
+        output += '\n\n'
+    
+        for vt in self.vertices_texture:
+            output += f'vt {vt[0]} {vt[1]}\n'
+
+        output += '\n\n'
+
+        for face in self.faces:
+            a = face[0]
+            b = face[1]
+            c = face[2]
+
+            output += f"f {a['v']+1}/{a['vt']+1} {b['v']+1}/{b['vt']+1} {c['v']+1}/{c['vt']+1} \n"
+
+        output += '\n'
+
+        with open(path, 'w+') as file:
+            file.write(output)
         
     def load_obj(self, path, normalize_texture=False):
         max_vt_x = 0.0 # normalizers for textures that > 1.0
@@ -80,6 +104,8 @@ class Model:
                 new_vt = (vt[0] / max_vt_x, vt[1] / max_vt_x)
                 new_vertex_textures.append(new_vt)
             self.vertices_texture = new_vertex_textures
+
+            self.save_obj('output.obj')
         
         # create for drawing arrays -> will change to new taignles and new vertices
         _vertices = []
@@ -109,8 +135,13 @@ class Model:
         #                      Mobius Area
         ##########################################################
 
+        divided_model = Model()
+        divide_factor = 5
+
+        vertex_index = 0
+        face_index = 0
+
         # try to find mobiuses
-        mobius_transforms_for_faces = []
         for face_index, face in enumerate(self.faces):
             '''
             face is: [{'v': index, 'vt': index}, {'v': index, 'vt': index}, {'v': index, 'vt': index}]
@@ -120,7 +151,7 @@ class Model:
             # print(self.get_neighbors(face_index))
             
             # calculcate normal of the face
-            vertices = [np.array(self.vertices[face[i]['v']]) for i in range(3)]
+            vertices = np.array([np.array(self.vertices[face[i]['v']]) for i in range(3)])
             v1 = vertices[1] - vertices[0]
             v2 = vertices[2] - vertices[0]
             normal = np.cross(v1, v2)
@@ -150,13 +181,15 @@ class Model:
             rotation_matrix = I + V_x + np.dot(V_x, V_x) * last_part
             # print(rotation_matrix)
 
-            middle_rotated = [np.dot(rotation_matrix, i) for i in vertices]
+            middle_rotated = np.array([np.dot(rotation_matrix, i) for i in vertices])
             # print(middle_rotated)
             # this is the final middle triangle we can omit the z.
             
             # neighbors:
             neighbors_faces_indices = self.get_neighbors(face_index)
             neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+            if len(neighbors_vertices) != 3:
+                continue
             # neighbors_vertices are list of 3 np.array with their actual vertices
             
             ##########################################################
@@ -166,7 +199,7 @@ class Model:
             # rotate the neighbors with the same rotation used for middle triangle
             rotated_neighbors = []
             for neighbor in neighbors_vertices:
-                rotated_neighbor = [np.dot(rotation_matrix, i) for i in neighbor]
+                rotated_neighbor = np.array([np.dot(rotation_matrix, i) for i in neighbor])
                 rotated_neighbors.append(rotated_neighbor)
 
             if DESMOS_PRINT and False:
@@ -209,7 +242,7 @@ class Model:
             neighbors_textures = [np.array([self.vertices_texture[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
             triangle_t_vec_2d = middle_rotated
-            triangle_t_tex_2d = [np.array(self.vertices_texture[face[i]['v']]) for i in range(3)]
+            triangle_t_tex_2d = np.array([np.array(self.vertices_texture[face[i]['v']]) for i in range(3)])
 
             triangle_u_vec_2d = rotated_flat_neighbors[0]
             triangle_u_tex_2d = neighbors_textures[0]
@@ -225,11 +258,125 @@ class Model:
             M_v = findMobiusTransform(triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2], triangle_v_tex_2d[0], triangle_v_tex_2d[1], triangle_v_tex_2d[2])
             M_w = findMobiusTransform(triangle_w_vec_2d[0], triangle_w_vec_2d[1], triangle_w_vec_2d[2], triangle_w_tex_2d[0], triangle_w_tex_2d[1], triangle_w_tex_2d[2])
 
-            print(type(M_t))
+            # j: the point shared by t, u, v
+            edge_j = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d)
+            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
+            assert edge_j is not None
+
+            # i: the point shared by t, u, w
+            edge_i = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_w_vec_2d)
+            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
+            assert edge_i is not None
+
+            # k: the point shared by t, v, w
+            edge_k = get_shared_point(triangle_t_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d)
+            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
+            assert edge_k is not None
+
+            j_complex = to_complex(edge_j)
+            i_complex = to_complex(edge_i)
+            k_complex = to_complex(edge_k)
 
             ##########################################################
-            # 5. 
+            # 4.5. test
             ##########################################################
+
+            if False:
+                # point i on t should return upon interpolation the vt of i
+                i_texture_result = get_shared_point(triangle_t_tex_2d, triangle_u_tex_2d, triangle_w_tex_2d)
+
+                test_point = i_complex + j_complex * 0.01 + k_complex * 0.01
+
+                # Drawer(points_to_draw=[edge_i, edge_k, edge_j, (np.real(test_point), np.imag(test_point))])
+
+                result_complex = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, test_point)
+
+
+            ##########################################################
+            # 5. divide and create new tiangles with mobius texture
+            ##########################################################
+
+            original_triangle_t = vertices
+
+            # were dividing triangle t into 
+
+            a = original_triangle_t[0]
+            b = original_triangle_t[1]
+            c = original_triangle_t[2]
+
+            mobius_a = triangle_t_vec_2d[0]
+            mobius_b = triangle_t_vec_2d[1]
+            mobius_c = triangle_t_vec_2d[2]
+
+            step_ab = (b - a) / divide_factor
+            step_ac = (c - a) / divide_factor
+            step_bc = (c - b) / divide_factor
+
+            mobius_step_ab = (mobius_b - mobius_a) / divide_factor
+            mobius_step_ac = (mobius_c - mobius_a) / divide_factor
+            mobius_step_bc = (mobius_c - mobius_b) / divide_factor
+
+            for column_index in range(divide_factor):
+                triangles_in_columns = (column_index * 2) + 1
+                for row_index in range(triangles_in_columns):
+                    if row_index % 2 == 0:
+                        # right triangle
+                        new_a = a + column_index * step_ab
+                        mobius_new_a = mobius_a + column_index * mobius_step_ab
+                        new_a = new_a + (row_index // 2) * step_bc
+                        mobius_new_a = mobius_new_a + (row_index // 2) * mobius_step_bc
+
+                        new_b = new_a + step_ab
+                        mobius_new_b = mobius_new_a + mobius_step_ab
+                        new_c = new_a + step_ac
+                        mobius_new_c = mobius_new_a + mobius_step_ac
+                    else:
+                        # inverted triangle
+                        new_a = a + column_index * step_ab
+                        mobius_new_a = mobius_a + column_index * mobius_step_ab
+                        new_a = new_a + ((row_index - 1) // 2) * step_bc
+                        mobius_new_a = mobius_new_a + ((row_index - 1) // 2) * mobius_step_bc
+
+                        new_b = new_a + step_ac
+                        mobius_new_b = mobius_new_a + mobius_step_ac
+                        new_c = new_a + step_bc
+                        mobius_new_c = mobius_new_a + mobius_step_bc
+                    
+                    vt_a = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_a))
+                    vt_b = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_b))
+                    vt_c = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_c))
+
+                    vt_a = complex_to_vec(vt_a)
+                    if np.isnan(vt_a[0]): vt_a[0] = 0
+                    if np.isnan(vt_a[1]): vt_a[1] = 0
+                    vt_b = complex_to_vec(vt_b)
+                    if np.isnan(vt_b[0]): vt_b[0] = 0
+                    if np.isnan(vt_b[1]): vt_b[1] = 0
+                    vt_c = complex_to_vec(vt_c)
+                    if np.isnan(vt_c[0]): vt_c[0] = 0
+                    if np.isnan(vt_c[1]): vt_c[1] = 0
+
+                    divided_model.vertices.append(new_a)
+                    divided_model.vertices_texture.append(vt_a)
+                    f0 = {'v': vertex_index, 'vt': vertex_index}
+                    vertex_index += 1
+                    divided_model.vertices.append(new_b)
+                    divided_model.vertices_texture.append(vt_b)
+                    f1 = {'v': vertex_index, 'vt': vertex_index}
+                    vertex_index += 1
+                    divided_model.vertices.append(new_c)
+                    divided_model.vertices_texture.append(vt_c)
+                    f2 = {'v': vertex_index, 'vt': vertex_index}
+                    vertex_index += 1
+                    divided_model.faces.append((f0, f1, f2))
+        
+
+
+        # todo: remove this redundant vt
+        divided_model.vertices_texture.append((0,0))
+        divided_model.save_obj(f'divided_{divide_factor}.obj')
+            
+
 
 
 
@@ -241,7 +388,7 @@ if __name__ == '__main__':
     pygame.init()
 
     obj = Model()
-    obj.load_obj('./wolf_head.obj')
+    obj.load_obj('./wolf_head_fixed.obj')
 
     # for face in obj.faces:
         # print(face)
