@@ -12,9 +12,9 @@ def findMobiusTransform(z1, z2, z3, w1, w2, w3):
     """ inputs are vec2 (tuples) returns a mobius matrix 2x2 complex"""
     
     matA = np.array([
-        [ to_complex(z1) * to_complex(w1), to_complex(w1), 1.0],
-        [ to_complex(z2) * to_complex(w2), to_complex(w2), 1.0],
-        [ to_complex(z3) * to_complex(w3), to_complex(w3), 1.0]
+        [ to_complex(z1) * to_complex(w1), to_complex(w1), 1.0+0.0j],
+        [ to_complex(z2) * to_complex(w2), to_complex(w2), 1.0+0.0j],
+        [ to_complex(z3) * to_complex(w3), to_complex(w3), 1.0+0.0j]
     ])
     
     matB = np.array([
@@ -24,15 +24,15 @@ def findMobiusTransform(z1, z2, z3, w1, w2, w3):
     ])
     
     matC = np.array([
-        [ to_complex(z1), to_complex(w1), 1.0],
-        [ to_complex(z2), to_complex(w2), 1.0],
-        [ to_complex(z3), to_complex(w3), 1.0]
+        [ to_complex(z1), to_complex(w1), 1.0+0.0j],
+        [ to_complex(z2), to_complex(w2), 1.0+0.0j],
+        [ to_complex(z3), to_complex(w3), 1.0+0.0j]
     ])
     
     matD = np.array([
-        [ to_complex(z1) * to_complex(w1), to_complex(z1), 1.0],
-        [ to_complex(z2) * to_complex(w2), to_complex(z2), 1.0],
-        [ to_complex(z3) * to_complex(w3), to_complex(z3), 1.0]
+        [ to_complex(z1) * to_complex(w1), to_complex(z1), 1.0+0.0j],
+        [ to_complex(z2) * to_complex(w2), to_complex(z2), 1.0+0.0j],
+        [ to_complex(z3) * to_complex(w3), to_complex(z3), 1.0+0.0j]
     ])
     
     a = np.linalg.det(matA)
@@ -46,6 +46,10 @@ def findMobiusTransform(z1, z2, z3, w1, w2, w3):
     b /= norm
     c /= norm
     d /= norm
+
+    new_norm = a * d - b * c
+    real = np.real(new_norm)
+    imag = np.imag(new_norm)
     
     return np.array([
         [a, b],
@@ -159,12 +163,6 @@ def r_distance(edge1: complex, edge2: complex, z: complex) -> float:
     x2 = np.real(edge2)
     y2 = np.imag(edge2)
 
-    a = (x2 - x1)
-    b = (y1 - y0)
-
-    c = (x1 - x0)
-    d = (y2 - y1)
-
     up = np.abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1))
     down = np.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 
@@ -277,6 +275,35 @@ def test_exp_mat():
     assert not np.allclose(exponented, np_exponented, 0.0001)
     print(0)
 
+def test_mobius_2():
+    findMobiusTransform((465, 400), (375, 255), (285, 400), (0.721499979, 0.555000007), (0.5, 0.169499993), (0.277999997, 0.555000007))
+
+def test_exp_mat_2():
+    mat = np.array([
+        [-0.0373644903+0.0475419611j, 0.0419622548-0.00615041098j], 
+        [-0.0164517052+0.0920018032j, 0.0564881079-0.0366623886j]
+    ])
+    exp_matrix(mat)
+
+def test_log_ratio_interpolator():
+    a = np.array([
+        [-6.91967216e-05 -6.33188506e-07j, 0.0115511687 +0.0121726356j],
+        [-8.78454287e-08 -1.10134431e-06j, -0.0287222303 +0.000434322574j]
+    ])
+
+    b = np.array([
+        [7.93345607e-05 -5.51156018e-06j, -0.0171067715 -0.0134160938j],
+        [8.70759038e-08 -1.10524061e-05j, 0.0252380241 +0.00409506354j]
+    ])
+
+    log_ratio_interpolator(a, b)
+
+def test_rdistance():
+    r_distance(285+400j, 375+255j, 523+101j)
+
+def test_gamma():
+    gamma_ij(285+400j, 375+255j, 465+400j, 567+231j)
+
 if __name__ == '__main__':
     
     test_mobius()
@@ -284,8 +311,13 @@ if __name__ == '__main__':
     test_multiply()
 
     test_exp_mat()
+    test_mobius_2()
+    test_exp_mat_2()
 
-
+    test_log_ratio_interpolator()
+    test_rdistance()
+    test_gamma()
+    
     checkpoint = 0
 
 
