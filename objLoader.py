@@ -138,6 +138,7 @@ class Model:
         print('Done: load object')
         
     def create_divided_mobius_model(self, divide_factor):
+        ''' This is where the main magic of the algorithm is taking action '''
 
         ##########################################################
         #                      Mobius Area

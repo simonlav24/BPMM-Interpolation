@@ -7,12 +7,6 @@ from model import *
 from PIL import Image
 from objLoader import *
 
-with open(r'./Shaders/vertex_shader.glsl', 'r') as v_shader:
-    vertex_shader_source = v_shader.read()
-
-with open(r'./Shaders/fragment_shader.glsl', 'r') as f_shader:
-    fragment_shader_source = f_shader.read()
-
 def load_program(vertex_source, fragment_source):
     """ load shaders and create program. return program opengl index """
     vertex_shader = load_shader(GL_VERTEX_SHADER, vertex_source)
@@ -74,32 +68,16 @@ def load_texture(filename):
 
     return texture
 
-load_and_divide = True
-
-model_path = './wolf_head_fixed.obj'
-
-if load_and_divide:
+def preview(model_path, texture_path):
     model = Model()
     model.load_obj(model_path)
 
-    TEXTURE_PATH = "checker-map_tho.png"
+    with open(r'./Shaders/vertex_shader.glsl', 'r') as v_shader:
+        vertex_shader_source = v_shader.read()
 
-    divide_factor = 5
-    divided_model = model.create_divided_mobius_model(divide_factor)
-    divided_model.save_obj(f'divided_{divide_factor}.obj')
+    with open(r'./Shaders/fragment_shader.glsl', 'r') as f_shader:
+        fragment_shader_source = f_shader.read()
 
-    model = Model()
-    model.load_obj(f'divided_{divide_factor}.obj')
-
-else:
-    model = Model()
-    model.load_obj(model_path)
-
-    TEXTURE_PATH = "checker-map_tho.png"
-
-
-
-if __name__ == "__main__":
     width, height = 800, 600
     pygame.display.set_mode((width, height), pygame.DOUBLEBUF|pygame.OPENGL|pygame.HWSURFACE)
 
@@ -128,7 +106,7 @@ if __name__ == "__main__":
     glEnableVertexAttribArray(aVertex) # enable the attrib for rendering
     glEnableVertexAttribArray(aTexCoord) # enable the attrib for rendering
 
-    texture = load_texture(TEXTURE_PATH)
+    texture = load_texture(texture_path)
 
     glActiveTexture(GL_TEXTURE0) # select the texture unit GL_TEXTURE0 (the first texture unit)
     glBindTexture(GL_TEXTURE_2D, texture) # bind it to texture we just loaded
@@ -154,10 +132,6 @@ if __name__ == "__main__":
         if keys[pygame.K_ESCAPE]:
             run = False
         
-        # model_matrix = np.dot(model_matrix, rotate(1, 1, 0.5, 0)) # rotate the model by changing its matrix
-        # model_matrix = np.dot(model_matrix, transformations.scale(1))
-
-
         # DRAW
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT) # clear the color and depth buffer
 
@@ -173,5 +147,6 @@ if __name__ == "__main__":
         glDrawArrays(GL_TRIANGLES, 0, len(model.vertices_for_drawing)) # draw 
 
         pygame.display.flip()
+    pygame.quit()
 
         
