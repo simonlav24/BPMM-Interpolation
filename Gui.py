@@ -64,7 +64,7 @@ layout = [
     [sg.Button('Priview Model', key='PREVIEW_MODEL', size=(15, 1)), sg.Button('Priview Subdivided', key='PREVIEW_SUB', size=(15, 1))]
 ]
 
-window = sg.Window('Blended Piecewise Mobius Maps', layout, element_justification='c')
+window = sg.Window('Blended Piecewise Mobius Maps', layout, element_justification='c', icon='.\\Assets\\icon.ico')
 
 while True:
     event, values = window.read()

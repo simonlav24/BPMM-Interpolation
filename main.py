@@ -81,6 +81,9 @@ def preview(model_path, texture_path):
     width, height = 800, 600
     pygame.display.set_mode((width, height), pygame.DOUBLEBUF|pygame.OPENGL|pygame.HWSURFACE)
 
+    programIcon = pygame.image.load('.\\Assets\\icon.png')
+    pygame.display.set_icon(programIcon)
+
     glViewport(0, 0, width, height) # creates the viewport. instead of -1 to 1 it make 0 to width
     
     projection_matrix = transformations.perspective(45, width/height, 0.1, 500) # create perspective matrix
