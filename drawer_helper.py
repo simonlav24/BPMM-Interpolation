@@ -62,13 +62,13 @@ class Drawer:
 
         font = pygame.font.SysFont("Calibri", 16)
 
-        surf = pygame.Surface((width, height))
+        surf = pygame.Surface((width + 200, height))
         surf.fill((255,255,255))
 
         for triangle in triangles_to_draw:
             org_points = [point for point in triangle]
             points = [self.p(point) for point in triangle]
-            pygame.draw.polygon(surf, random_color(), points, 1)
+            pygame.draw.polygon(surf, random_color(), points, 5)
             for i, p in enumerate(points):
                 text = font.render(f'[{i}]({three_decimals(org_points[i][0])}, {three_decimals(org_points[i][1])})', True, (0,0,0))
                 surf.blit(text, p)

@@ -76,14 +76,15 @@ def load_texture(filename):
 
 load_and_divide = True
 
+model_path = './wolf_head_fixed.obj'
+
 if load_and_divide:
     model = Model()
-    model.load_obj('./wolf_head_fixed.obj')
+    model.load_obj(model_path)
 
     TEXTURE_PATH = "checker-map_tho.png"
-    # TEXTURE_PATH = "texture.png"
 
-    divide_factor = 3
+    divide_factor = 5
     divided_model = model.create_divided_mobius_model(divide_factor)
     divided_model.save_obj(f'divided_{divide_factor}.obj')
 
@@ -92,7 +93,7 @@ if load_and_divide:
 
 else:
     model = Model()
-    model.load_obj('./wolf_head_fixed.obj')
+    model.load_obj(model_path)
 
     TEXTURE_PATH = "checker-map_tho.png"
 

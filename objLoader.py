@@ -66,10 +66,10 @@ class Model:
                 if line.startswith('vn'):
                     pass
                 if line.startswith('vt'):
-                    x, y = line[2:].split()
-                    max_vt_x = max(max_vt_x, float(x))
-                    max_vt_y = max(max_vt_y, float(y))
-                    self.vertices_texture.append((float(x), float(y)))
+                    splitted = line[2:].split()
+                    max_vt_x = max(max_vt_x, float(splitted[0]))
+                    max_vt_y = max(max_vt_y, float(splitted[1]))
+                    self.vertices_texture.append((float(splitted[0]), float(splitted[1])))
                 elif line.startswith('v'):
                     x, y, z = line[1:].split()
                     self.vertices.append((float(x), float(y), float(z)))
@@ -148,16 +148,14 @@ class Model:
         vertex_index = 0
         face_index = 0
 
+        test_index = 0
+
         # try to find mobiuses
         for face_index, face in enumerate(self.faces):
-            print_if(face_index == 170, f'<face: {face_index}>')
-            '''
-            face is: [{'v': index, 'vt': index}, {'v': index, 'vt': index}, {'v': index, 'vt': index}]
-            '''
-            
-            # calculcate normal of the face
+            # -- calculcate normal of the face ---
+
+            # the vertices of the current face in 3d
             vertices = np.array([np.array(self.vertices[face[i]['v']]) for i in range(3)])
-            print_if(face_index == 170, f'\t<vertices: {vertices}>')
             
             v1 = vertices[1] - vertices[0]
             v2 = vertices[2] - vertices[0]
@@ -181,14 +179,16 @@ class Model:
             # 1. rotate the triangle so that it will be flat on z
             ##########################################################
 
+            # the rotation matrix needed to rotate the triangle so z is flat on some value
             rotation_matrix = I + V_x + np.dot(V_x, V_x) * last_part
 
-            middle_rotated = np.array([np.dot(rotation_matrix, i) for i in vertices])
             # this is the final middle triangle we can omit the z.
+            middle_rotated = np.array([np.dot(rotation_matrix, i) for i in vertices])
             
             # neighbors:
             neighbors_faces_indices = self.get_neighbors(face_index)
             neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+
             if len(neighbors_vertices) != 3:
                 continue
             # neighbors_vertices are list of 3 np.array with their actual vertices
@@ -207,10 +207,9 @@ class Model:
             # 3. rotate the neighbors to be aligned on z plane (verified in desmos)
             ##########################################################
 
-            # rotate every neighbor along connecting edge
+            # rotate every neighbor along connecting edge so it flat on the original triangle's z
             rotated_flat_neighbors = []
             for i, neighbor in enumerate(rotated_neighbors):
-                # print(f'Iteration {i}')
                 neighbor_along = rotate_to_align(middle_rotated, neighbor)
                 rotated_flat_neighbors.append(neighbor_along)
 
@@ -218,14 +217,13 @@ class Model:
             # 4. get everything ready for mobius calculations
             ##########################################################
 
-            neighbors_textures = [np.array([self.vertices_texture[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
+            neighbors_textures = [np.array([self.vertices_texture[j['vt']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
             triangle_t_vec_2d = middle_rotated
-            triangle_t_tex_2d = np.array([np.array(self.vertices_texture[face[i]['v']]) for i in range(3)])
-            print_if(face_index == 170, f'\t<vertices textures: {triangle_t_tex_2d}>')
-            if face_index == 170: debug_triangles = [triangle_t_vec_2d]
-            if face_index == 170: debug_triangles_points = []
-            if face_index == 170: debug_points = [i for i in triangle_t_tex_2d]
+            triangle_t_tex_2d = np.array([np.array(self.vertices_texture[face[i]['vt']]) for i in range(3)])
+            
+            if face_index == test_index: debug_triangles_points = []
+            if face_index == test_index: debug_points = [i for i in triangle_t_tex_2d]
 
             triangle_u_vec_2d = rotated_flat_neighbors[0]
             triangle_u_tex_2d = neighbors_textures[0]
@@ -236,6 +234,8 @@ class Model:
             triangle_w_vec_2d = rotated_flat_neighbors[2]
             triangle_w_tex_2d = neighbors_textures[2]
 
+            if face_index == test_index: debug_triangles = [triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d]
+
             M_t = findMobiusTransform(triangle_t_vec_2d[0], triangle_t_vec_2d[1], triangle_t_vec_2d[2], triangle_t_tex_2d[0], triangle_t_tex_2d[1], triangle_t_tex_2d[2])
             M_u = findMobiusTransform(triangle_u_vec_2d[0], triangle_u_vec_2d[1], triangle_u_vec_2d[2], triangle_u_tex_2d[0], triangle_u_tex_2d[1], triangle_u_tex_2d[2])
             M_v = findMobiusTransform(triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2], triangle_v_tex_2d[0], triangle_v_tex_2d[1], triangle_v_tex_2d[2])
@@ -243,37 +243,19 @@ class Model:
 
             # j: the point shared by t, u, v
             edge_j = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d)
-            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
             assert edge_j is not None
 
             # i: the point shared by t, u, w
             edge_i = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_w_vec_2d)
-            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
             assert edge_i is not None
 
             # k: the point shared by t, v, w
             edge_k = get_shared_point(triangle_t_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d)
-            # Drawer([triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d], [edge_j])
             assert edge_k is not None
 
             j_complex = to_complex(edge_j)
             i_complex = to_complex(edge_i)
             k_complex = to_complex(edge_k)
-
-            ##########################################################
-            # 4.5. test
-            ##########################################################
-
-            if False:
-                # point i on t should return upon interpolation the vt of i
-                i_texture_result = get_shared_point(triangle_t_tex_2d, triangle_u_tex_2d, triangle_w_tex_2d)
-
-                test_point = i_complex + j_complex * 0.01 + k_complex * 0.01
-
-                # Drawer(points_to_draw=[edge_i, edge_k, edge_j, (np.real(test_point), np.imag(test_point))])
-
-                result_complex = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, test_point)
-
 
             ##########################################################
             # 5. divide and create new tiangles with mobius texture
@@ -325,9 +307,9 @@ class Model:
                         new_c = new_a + step_bc
                         mobius_new_c = mobius_new_a + mobius_step_bc
                     
-                    if face_index == 170: debug_triangles_points.append(mobius_new_a)
-                    if face_index == 170: debug_triangles_points.append(mobius_new_b)
-                    if face_index == 170: debug_triangles_points.append(mobius_new_c)
+                    if face_index == test_index: debug_triangles_points.append(mobius_new_a)
+                    if face_index == test_index: debug_triangles_points.append(mobius_new_b)
+                    if face_index == test_index: debug_triangles_points.append(mobius_new_c)
                     vt_a = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_a))
                     vt_b = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_b))
                     vt_c = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_c))
@@ -353,10 +335,9 @@ class Model:
                         if np.isnan(vt_c[0]): vt_c[0] = 0
                         if np.isnan(vt_c[1]): vt_c[1] = 0
 
-                    print_if(face_index == 170, f'\t<new textures: {(vt_a, vt_b, vt_c)}>')
-                    if face_index == 170: debug_points.append(vt_a)
-                    if face_index == 170: debug_points.append(vt_b)
-                    if face_index == 170: debug_points.append(vt_c)
+                    if face_index == test_index: debug_points.append(vt_a)
+                    if face_index == test_index: debug_points.append(vt_b)
+                    if face_index == test_index: debug_points.append(vt_c)
 
                     divided_model.vertices.append(new_a)
                     divided_model.vertices_texture.append(vt_a)
@@ -372,13 +353,6 @@ class Model:
                     vertex_index += 1
                     divided_model.faces.append((f0, f1, f2))
 
-
-            print_if(face_index == 170, f'<face/>')
-            if face_index == 170:
-                Drawer(triangles_to_draw=[triangle_t_tex_2d], points_to_draw=debug_points, file='texture_points')
-                Drawer(triangles_to_draw=debug_triangles, points_to_draw=debug_triangles_points, file='vertices')
-
-        print('Done: create_and_divivde')
         return divided_model
 
 if __name__ == '__main__':
@@ -387,15 +361,9 @@ if __name__ == '__main__':
     pygame.init()
 
     obj = Model()
-    obj.load_obj('./wolf_head_fixed.obj')
-
-    # for face in obj.faces:
-        # print(face)
-        # if len(face) != 3:
-            # print('--------------------------------------')
+    obj.load_obj('./cube.obj')
      
     lll = [(obj.vertices[face[0]['v']], obj.vertices[face[1]['v']], obj.vertices[face[2]['v']]) for face in obj.faces]
-    # print(lll)
     
     winWidth = 1280
     winHeight = 720

@@ -59,6 +59,24 @@ def get_mouse_texture_target_mobius(target_texture_pos, target_texture_size, t_v
     pos = np.array([target_texture_pos[0] + target_texture_size[0] * np.real(transformed), target_texture_pos[1] + target_texture_size[1] * np.imag(transformed)])
     return pos
 
+class Point:
+    _selected = None
+    _dragged = None
+    _win = None
+    def __init__(self, x, y, z):
+        self.pos = np.array([x, y, z])
+    def step(self):
+        mouse_pos = np.array(pygame.mouse.get_pos())
+        dist = np.sqrt((self.pos[0] - mouse_pos[0]) ** 2 + (self.pos[1] - mouse_pos[1]) ** 2)
+        if dist < 10:
+            Point._selected = self
+
+    def draw(self):
+        color = (255,0,0)
+        if self is Point._selected:
+            color = (255,255,0)
+        pygame.draw.circle(point._win, color, (self.pos[0], self.pos[1]), 5)
+        pygame.draw.circle(point._win, color, (self.pos[0], self.pos[1]), 10, 1)
 
 if __name__ == "__main__":
     pygame.init()
@@ -75,10 +93,23 @@ if __name__ == "__main__":
     target_texture_pos = np.array([650, 100])
     target_texture_size = np.array([500, 500])
 
+    Point._win = win
+    points = [
+        Point(715, 400, 0),#0
+        Point(625, 255, 0),#1
+        Point(535, 400, 0),#2
+        Point(450, 255, 0),#3
+        Point(795, 255, 0),#4
+        Point(625, 555, 0),#5
+    ]
+
+    for point in points:
+        point.pos += offset
+
     t_vec = np.array([
-        np.array([715, 400, 0]) + offset,
-        np.array([625, 255, 0]) + offset,
-        np.array([535, 400, 0]) + offset,
+        0,
+        1,
+        2,
     ])
     t_tex = np.array([
         [0.7215, 0.555],
@@ -87,9 +118,9 @@ if __name__ == "__main__":
     ])
 
     u_vec = np.array([
-        np.array([625, 255, 0]) + offset,
-        np.array([450, 255, 0]) + offset,
-        np.array([535, 400, 0]) + offset,
+        1,
+        3,
+        2,
     ])
     u_tex = np.array([
         [0.5, 0.1695],
@@ -98,9 +129,9 @@ if __name__ == "__main__":
     ])
 
     v_vec = np.array([
-        np.array([795, 255, 0]) + offset,
-        np.array([625, 255, 0]) + offset,
-        np.array([715, 400, 0]) + offset,
+        4,
+        1,
+        0
     ])
     v_tex = np.array([
         [0.9465, 0.1695],
@@ -109,9 +140,9 @@ if __name__ == "__main__":
     ])
 
     w_vec = np.array([
-        np.array([715, 400, 0]) + offset,
-        np.array([535, 400, 0]) + offset,
-        np.array([625, 555, 0]) + offset,
+        0,
+        2,
+        5
     ])
     w_tex = np.array([
         [0.7215, 0.555],
@@ -119,18 +150,21 @@ if __name__ == "__main__":
         [0.5, 0.94],
     ])
 
-    mobius_transform = findMobiusTransform(t_vec[0], t_vec[1], t_vec[1], t_tex[0], t_tex[1], t_tex[1])
-
-
     run = True
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                pass
+                if Point._selected:
+                    Point._dragged = Point._selected
             if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                pass
+                Point._dragged = None
+            if event.type == pygame.MOUSEMOTION:
+                if Point._dragged:
+                    mouse_pos = np.array(pygame.mouse.get_pos())
+                    Point._dragged.pos[0] = mouse_pos[0]
+                    Point._dragged.pos[1] = mouse_pos[1]
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_s:
                     pass
@@ -139,17 +173,22 @@ if __name__ == "__main__":
             run = False
         
         # step
+        Point._selected = None
+        for point in points:
+            point.step()
+
+        # mobius_transform = findMobiusTransform(points[t_vec[0]], points[t_vec[1]], points[t_vec[1]], t_tex[0], t_tex[1], t_tex[1])
         mouse_pos = np.array(pygame.mouse.get_pos())
-        z = to_complex(mouse_pos)
-        z_t = transform(z, mobius_transform)
+        # z = to_complex(mouse_pos)
+        # z_t = transform(z, mobius_transform)
         # print(z_t)
 
-        z_vec = complex_to_vec(z_t) * texture_coords[1]
+        # z_vec = complex_to_vec(z_t) * texture_coords[1]
         # print(z_vec)
         
-        barycentric_coords = get_mouse_texture_target_barycentric(target_texture_pos, target_texture_size, t_vec, t_tex)
-        mobius_test_coords = get_mouse_texture_target_mobius_transform_test(target_texture_pos, target_texture_size, t_vec, t_tex)
-        mobius_coords = get_mouse_texture_target_mobius(target_texture_pos, target_texture_size, t_vec, t_tex, u_vec, u_tex, v_vec, v_tex, w_vec, w_tex)
+        barycentric_coords = get_mouse_texture_target_barycentric(target_texture_pos, target_texture_size, [points[i].pos for i in t_vec], t_tex)
+        mobius_test_coords = get_mouse_texture_target_mobius_transform_test(target_texture_pos, target_texture_size, [points[i].pos for i in t_vec], t_tex)
+        mobius_coords = get_mouse_texture_target_mobius(target_texture_pos, target_texture_size, [points[i].pos for i in t_vec], t_tex, [points[i].pos for i in u_vec], u_tex, [points[i].pos for i in v_vec], v_tex, [points[i].pos for i in w_vec], w_tex)
 
         # draw
         win.fill((255,255,255))
@@ -157,19 +196,22 @@ if __name__ == "__main__":
         
         win.blit(texture_surf, target_texture_pos)
 
-        pygame.draw.polygon(win, (0,0,0), [(i[0], i[1]) for i in t_vec], 1)
-        pygame.draw.polygon(win, (0,0,0), [(i[0], i[1]) for i in u_vec], 1)
-        pygame.draw.polygon(win, (0,0,0), [(i[0], i[1]) for i in v_vec], 1)
-        pygame.draw.polygon(win, (0,0,0), [(i[0], i[1]) for i in w_vec], 1)
+        pygame.draw.polygon(win, (0,0,0), [(points[i].pos[0], points[i].pos[1]) for i in t_vec], 1)
+        pygame.draw.polygon(win, (0,0,0), [(points[i].pos[0], points[i].pos[1]) for i in u_vec], 1)
+        pygame.draw.polygon(win, (0,0,0), [(points[i].pos[0], points[i].pos[1]) for i in v_vec], 1)
+        pygame.draw.polygon(win, (0,0,0), [(points[i].pos[0], points[i].pos[1]) for i in w_vec], 1)
 
         texture_triangle_t = [(target_texture_pos[0] + i[0] * texture_coords[1][0], target_texture_pos[1] + i[1] * texture_coords[1][1]) for i in t_tex]
         pygame.draw.polygon(win, (0,0,0), texture_triangle_t, 1)
 
-        pygame.draw.circle(win, (255,0,0), mouse_pos, 5)
-        pygame.draw.circle(win, (255,0,0), z_vec, 5)
+        # pygame.draw.circle(win, (255,0,0), mouse_pos, 5)
+        # pygame.draw.circle(win, (255,0,0), z_vec, 5)
         pygame.draw.circle(win, (255,0,0), barycentric_coords, 5)
         pygame.draw.circle(win, (255,255,0), mobius_test_coords, 5)
         pygame.draw.circle(win, (0,255,255), mobius_coords, 5)
+
+        for point in points:
+            point.draw()
 
         pygame.display.update()
 
