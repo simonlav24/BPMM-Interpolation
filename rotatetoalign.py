@@ -1,7 +1,7 @@
 import numpy as np
 from random import randint, uniform
-from desmos_tools import *
-from drawer_helper import Drawer
+from Tools.desmos_tools import *
+from Tools.drawer_helper import Drawer
 
 DESMOS_PRINT = True
 
@@ -223,19 +223,26 @@ def rotate_to_align(triangle, neighbor):
 def get_shared_point(t, n1, n2):
     hist = [[t[0], 0], [t[1], 0], [t[2], 0]]
     for i, point_to_check in enumerate(t):
-        for point_on_n1 in n1:
-            if np.isclose(point_to_check[0], point_on_n1[0]) and np.isclose(point_to_check[1], point_on_n1[1]):
-                hist[i][1] += 1
-        for point_on_n2 in n2:
-            if np.isclose(point_to_check[0], point_on_n2[0]) and np.isclose(point_to_check[1], point_on_n2[1]):
-                hist[i][1] += 1
-    if hist[0][1] == 2:
-        return t[0]
-    if hist[1][1] == 2:
-        return t[1]
-    if hist[2][1] == 2:
-        return t[2]
-    return None
+        if n1 is not None:
+            for point_on_n1 in n1:
+                if np.isclose(point_to_check[0], point_on_n1[0]) and np.isclose(point_to_check[1], point_on_n1[1]):
+                    hist[i][1] += 1
+        if n2 is not None:
+            for point_on_n2 in n2:
+                if np.isclose(point_to_check[0], point_on_n2[0]) and np.isclose(point_to_check[1], point_on_n2[1]):
+                    hist[i][1] += 1
+    max = 0
+    result = None
+    if hist[0][1] > max:
+        result = t[0]
+        max = hist[0][1]
+    if hist[1][1] > max:
+        result = t[1]
+        max = hist[1][1]
+    if hist[2][1] > max:
+        result = t[2]
+        max = hist[2][1]
+    return result
 
 def rotate_to_align_not_working_2(triangle, neighbor):
     t = triangle

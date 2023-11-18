@@ -8,7 +8,16 @@ def to_complex(vec2):
 def complex_to_vec(c: complex) -> np.ndarray:
     return np.array([np.real(c), np.imag(c)])
 
-def findMobiusTransform(z1, z2, z3, w1, w2, w3):
+def findMobiusTransform(z, w):
+    if z is None:
+        identity = np.array([
+        [1.0+0.0j, 0.0+0.0j],
+        [0.0+0.0j, 1.0+0.0j]
+        ])
+        return identity
+    return _findMobiusTransform(z[0], z[1], z[2], w[0], w[1], w[2])
+
+def _findMobiusTransform(z1, z2, z3, w1, w2, w3):
     """ inputs are vec2 (tuples) returns a mobius matrix 2x2 complex"""
     
     matA = np.array([
@@ -150,7 +159,14 @@ def log_matrix(mat: np.ndarray) -> np.ndarray:
     return result
 
 def log_ratio_interpolator(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    mobius_ratio = np.matmul(a, np.linalg.inv(b))
+    try:
+        mobius_ratio = np.matmul(a, np.linalg.inv(b))
+    except Exception:
+        identity = np.array([
+            [1.0+0.0j, 0.0+0.0j],
+            [0.0+0.0j, 1.0+0.0j]
+        ])
+        mobius_ratio = identity
 
     real = np.real(mobius_ratio)
 

@@ -7,7 +7,7 @@ from objLoader import Model
 from main import preview
 
 def create_sub_name(model_path, divide_factor):
-    model_name = os.path.basename(model_path).split('.')[0] + f'divided_{divide_factor}.obj'
+    model_name = os.path.basename(model_path).split('.')[0] + f'_divided_{divide_factor}.obj'
     model_dir = os.path.dirname(model_path)
     return os.path.join(model_dir, model_name)
 
@@ -33,7 +33,7 @@ def handle_events(event, values):
         texture_path = values['TEXTURE']
         
         if not os.path.exists(model_path) or not os.path.exists(texture_path):
-            sg.popup('Model or Texture not exist, check your inputs')
+            sg.popup('Model or Texture does not exist, check your inputs')
             return
         
         preview(model_path, texture_path)
@@ -44,11 +44,10 @@ def handle_events(event, values):
         divide_factor = int(values['SUBS'])
         
         model_path = create_sub_name(model_path, divide_factor)
-        print(model_path)
         texture_path = values['TEXTURE']
         
         if not os.path.exists(model_path) or not os.path.exists(texture_path):
-            sg.popup('Model or Texture not exist, check your inputs')
+            sg.popup('Model or Texture does not exist, check your inputs')
             return
         
         preview(model_path, texture_path)

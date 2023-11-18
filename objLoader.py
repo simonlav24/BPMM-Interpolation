@@ -1,8 +1,8 @@
 import numpy as np
 from rotatetoalign import *
 from mobius import *
-from desmos_tools import *
-from drawer_helper import Drawer
+#from desmos_tools import *
+#from drawer_helper import Drawer
 
 DESMOS_PRINT = True
 
@@ -58,13 +58,27 @@ class Model:
             file.write(output)
         print('Done: save object')
         
+    def preview_size(self):
+        """ resize to preview size """
+        array = np.array(self.vertices)
+
+        max_distance = np.max(np.linalg.norm(array, axis=1))
+
+        scale_factor = 100.0 / max_distance
+        
+        vertices = []
+        for vertex in self.vertices:
+            vertices.append((vertex[0] * scale_factor, vertex[1] * scale_factor, vertex[2] * scale_factor))
+        
+        self.vertices = vertices
+
     def load_obj(self, path, normalize_texture=False):
         max_vt_x = 0.0 # normalizers for textures that > 1.0
         max_vt_y = 0.0
         with open(path, 'r') as file:
             for line in file.readlines():
                 if line.startswith('vn'):
-                    pass
+                    continue
                 if line.startswith('vt'):
                     splitted = line[2:].split()
                     max_vt_x = max(max_vt_x, float(splitted[0]))
@@ -87,19 +101,30 @@ class Model:
                     self.faces.append(new_face)
                     
         # create neighbors
+        # face_indices is list of all faces by their vertices indices.
         face_indices = [(face[0]['v'], face[1]['v'], face[2]['v']) for face in self.faces]
         
         for i, face_source in enumerate(face_indices):
+            # for every face, 
             face_neighbors = []
             for j, face in enumerate(face_indices):
+                # for every other face
                 count = 0
                 
                 for k in range(3):
                     if face_source[k] in face:
                         count += 1
                 
+                # append neighbors
                 if count == 2:
+                    # the face "face" and the face "face_source" sharing two vertices meaning they are neighbors
                     face_neighbors.append(j)
+                
+                # elif count == 1:
+                #     # 
+            # while len(face_neighbors) < 3:
+            #     face_neighbors.append(i)
+
             self.neighbors.append(face_neighbors)
         
         if normalize_texture:
@@ -112,6 +137,8 @@ class Model:
 
             self.save_obj('output.obj')
         
+        self.preview_size()
+
         # create for drawing arrays -> will change to new taignles and new vertices
         _vertices = []
         _vertices_texture = []
@@ -190,8 +217,8 @@ class Model:
             neighbors_faces_indices = self.get_neighbors(face_index)
             neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
-            if len(neighbors_vertices) != 3:
-                continue
+            # if len(neighbors_vertices) != 3:
+            #     continue
             # neighbors_vertices are list of 3 np.array with their actual vertices
             
             ##########################################################
@@ -226,21 +253,28 @@ class Model:
             if face_index == test_index: debug_triangles_points = []
             if face_index == test_index: debug_points = [i for i in triangle_t_tex_2d]
 
-            triangle_u_vec_2d = rotated_flat_neighbors[0]
-            triangle_u_tex_2d = neighbors_textures[0]
+            triangle_u_vec_2d = None
+            triangle_u_tex_2d = None
+            if len(rotated_flat_neighbors) >= 1:
+                triangle_u_vec_2d = rotated_flat_neighbors[0]
+                triangle_u_tex_2d = neighbors_textures[0]
 
-            triangle_v_vec_2d = rotated_flat_neighbors[1]
-            triangle_v_tex_2d = neighbors_textures[1]
+            triangle_v_vec_2d = None
+            triangle_v_tex_2d = None
+            if len(rotated_flat_neighbors) >= 2:
+                triangle_v_vec_2d = rotated_flat_neighbors[1]
+                triangle_v_tex_2d = neighbors_textures[1]
 
-            triangle_w_vec_2d = rotated_flat_neighbors[2]
-            triangle_w_tex_2d = neighbors_textures[2]
+            triangle_w_vec_2d = None
+            triangle_w_tex_2d = None
+            if len(rotated_flat_neighbors) >= 3:
+                triangle_w_vec_2d = rotated_flat_neighbors[2]
+                triangle_w_tex_2d = neighbors_textures[2]
 
-            if face_index == test_index: debug_triangles = [triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d]
-
-            M_t = findMobiusTransform(triangle_t_vec_2d[0], triangle_t_vec_2d[1], triangle_t_vec_2d[2], triangle_t_tex_2d[0], triangle_t_tex_2d[1], triangle_t_tex_2d[2])
-            M_u = findMobiusTransform(triangle_u_vec_2d[0], triangle_u_vec_2d[1], triangle_u_vec_2d[2], triangle_u_tex_2d[0], triangle_u_tex_2d[1], triangle_u_tex_2d[2])
-            M_v = findMobiusTransform(triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2], triangle_v_tex_2d[0], triangle_v_tex_2d[1], triangle_v_tex_2d[2])
-            M_w = findMobiusTransform(triangle_w_vec_2d[0], triangle_w_vec_2d[1], triangle_w_vec_2d[2], triangle_w_tex_2d[0], triangle_w_tex_2d[1], triangle_w_tex_2d[2])
+            M_t = findMobiusTransform(triangle_t_vec_2d, triangle_t_tex_2d)
+            M_u = findMobiusTransform(triangle_u_vec_2d, triangle_u_tex_2d)
+            M_v = findMobiusTransform(triangle_v_vec_2d, triangle_v_tex_2d)
+            M_w = findMobiusTransform(triangle_w_vec_2d, triangle_w_tex_2d)
 
             # j: the point shared by t, u, v
             edge_j = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d)
