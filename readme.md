@@ -26,7 +26,7 @@ $$
 M_{t},\ M_{u},\ M_{v},\ M_{w}
 $$
 
-​	:point_right: the calculation can be found here: [wiki](calculation in https://en.wikipedia.org/wiki/M%C3%B6bius_transformation) 
+​	:point_right: the calculation can be found here: [wiki](https://en.wikipedia.org/wiki/M%C3%B6bius_transformation) 
 
 * Subdivide the target (t) face by subdivision factor
 
