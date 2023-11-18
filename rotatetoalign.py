@@ -129,6 +129,12 @@ def find_intersection_points(x1, y1, r1, x2, y2, r2):
         return np.array([x4, y4]), np.array([x5, y5])
 
 def rotate_to_align(triangle, neighbor):
+    same = False
+    if np.array_equal(triangle, neighbor):
+        same = True
+    if same:
+        return triangle
+
     result = []
     z_value = triangle[0][2]
     # find same vertices and edge
@@ -204,11 +210,6 @@ def rotate_to_align(triangle, neighbor):
             potential_neighbor2.append(edge_vertices_out.pop(0))
     potential_neighbor2 = np.array(potential_neighbor2)
 
-    # print(polygon_to_desmos_2d(triangle))
-    # print(polygon_to_desmos_2d(potential_neighbor1))
-    # print(polygon_to_desmos_2d(potential_neighbor2))
-
-    # Drawer([triangle, potential_neighbor1, potential_neighbor2], [intersection_points[0], intersection_points[1]])
     check1 = check_if_triangles_on_different_orientation(triangle, potential_neighbor1, intersection_points[0])
     check2 = check_if_triangles_on_different_orientation(triangle, potential_neighbor2, intersection_points[1])
 

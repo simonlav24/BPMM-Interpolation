@@ -104,6 +104,15 @@ def exp_matrix(mat: np.ndarray) -> np.ndarray:
     return result
 
 def log_matrix(mat: np.ndarray) -> np.ndarray:
+
+    # if identity, return identity
+    identity = np.array([
+        [1.0+0.0j, 0.0+0.0j],
+        [0.0+0.0j, 1.0+0.0j]
+    ])
+    if np.allclose(mat, identity): 
+        return identity
+    
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]
     determinant = mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]

@@ -1,6 +1,7 @@
 
-import PySimpleGUI as sg
 import os
+import json
+import PySimpleGUI as sg
 
 from objLoader import Model
 from main import preview
@@ -61,16 +62,27 @@ layout = [
     [sg.Text('Texture:'), sg.Input('', key='TEXTURE', size=(50,0)), sg.FileBrowse()],
     [sg.Text('Subdivisions:'), sg.Spin([i for i in range(1,11)], initial_value=5, key='SUBS', size=(10,1))],
     [sg.Button('Create', key='CREATE')],
-    [sg.Button('Priview Model', key='PREVIEW_MODEL', size=(15, 1)), sg.Button('Priview Subdivided', key='PREVIEW_SUB', size=(15, 1))]
+    [sg.Button('Preview Model', key='PREVIEW_MODEL', size=(15, 1)), sg.Button('Preview Subdivided', key='PREVIEW_SUB', size=(15, 1))]
 ]
 
-window = sg.Window('Blended Piecewise Mobius Maps', layout, element_justification='c', icon='.\\Assets\\icon.ico')
+window = sg.Window('Blended Piecewise Mobius Maps', layout, element_justification='c', icon='.\\Assets\\icon.ico', finalize=True)
+
+if os.path.exists(r'./Gui.json'):
+    with open('Gui.json') as file:
+        values = json.load(file)
+        for value in values:
+            if 'Browse' in value:
+                continue
+            window[value].update(values[value])
 
 while True:
     event, values = window.read()
     if event in (None, 'Exit'):
         break
+    with open('Gui.json', 'w+') as file:
+        json.dump(values, file)
     handle_events(event, values)
+    
 window.close()
 
 
