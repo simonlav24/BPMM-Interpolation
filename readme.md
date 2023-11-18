@@ -16,11 +16,12 @@ The goal of this project is to implement the algorithm.
 
 for every face and his (potential) 3 neighbors:
 
-![triangle](./assets/triangle.png)
+![triangle](Assets/triangle.png)
 
 * Rotate each neighbor to be aligned in the same plane as the target (t) face. consider each face to be in a 2d plane.
 
 * Find mobius transform between the triangle face and the triangle face in the texture map for each face while every vertex in the 2d plane is represented by a complex point in the complex plane.
+
 $$
 M_{t},\ M_{u},\ M_{v},\ M_{w}
 $$
@@ -34,21 +35,25 @@ $$
 z is a vertex inside the target (t) face.
 
 Rdistance:
+
 $$
 r_{ij}\left(z\right)=\text{distance}\left(z,\ edge_{ij}\right)
 $$
 
 Rdistance total:
+
 $$
 s\left(z\right)=r_{jk}\left(z\right)r_{ki}\left(z\right)+r_{ij}\left(z\right)r_{jk}\left(z\right)+r_{ij}\left(z\right)r_{ki}\left(z\right)
 $$
 
 Gamma:
+
 $$
 \gamma_{ij}\left(z\right)=\frac{r_{jk}\left(z\right)r_{ki}\left(z\right)}{s\left(z\right)}, \gamma_{jk}\left(z\right)=\frac{r_{ij}\left(z\right)r_{ki}\left(z\right)}{s\left(z\right)}, \gamma_{ki}\left(z\right)=\frac{r_{ij}\left(z\right)r_{jk}\left(z\right)}{s\left(z\right)}
 $$
 
 LogMobiusRatio:
+
 $$
 l_{tu}=\log\left(\text{sign}\left(\text{trace}\left(\text{Real}\left(\delta_{tu}\right)\right)\right)\cdot\delta_{tu}\right)
 $$
@@ -58,11 +63,13 @@ $$
 $$
 
 LogRatioInterpolator:
+
 $$
 l_{t}=\gamma_{ij}l_{ut}+\gamma_{jk}l_{vt}+\gamma_{ki}l_{wt}
 $$
 
 The final interpolator:
+
 $$
 O=\exp\left(\frac{1}{2}l_{t}\right)M_{t}
 $$
