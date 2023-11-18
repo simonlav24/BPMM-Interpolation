@@ -16,7 +16,7 @@ The goal of this project is to implement the algorithm.
 
 for every face and his (potential) 3 neighbors:
 
-![triangle](.\triangle.png)
+![triangle](./assets/triangle.png)
 
 * Rotate each neighbor to be aligned in the same plane as the target (t) face. consider each face to be in a 2d plane.
 
