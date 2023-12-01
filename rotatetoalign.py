@@ -220,7 +220,7 @@ def rotate_to_align(triangle, neighbor):
     else:
         return potential_neighbor2
 
-def get_shared_point(t, n1, n2):
+def get_shared_point(t, n1, n2, ignored=[]):
     hist = [[t[0], 0], [t[1], 0], [t[2], 0]]
     for i, point_to_check in enumerate(t):
         if n1 is not None:
@@ -231,6 +231,12 @@ def get_shared_point(t, n1, n2):
             for point_on_n2 in n2:
                 if np.isclose(point_to_check[0], point_on_n2[0]) and np.isclose(point_to_check[1], point_on_n2[1]):
                     hist[i][1] += 1
+    
+    for i in ignored:
+        if np.allclose(i, hist[0][0]): hist[0][1] = -100
+        if np.allclose(i, hist[1][0]): hist[1][1] = -100
+        if np.allclose(i, hist[2][0]): hist[2][1] = -100
+
     max = 0
     result = None
     if hist[0][1] > max:

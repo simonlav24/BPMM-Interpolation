@@ -2,23 +2,28 @@ import numpy as np
 from rotatetoalign import *
 from mobius import *
 #from desmos_tools import *
-#from drawer_helper import Drawer
+from Tools.drawer_helper import Drawer
 
 DESMOS_PRINT = True
+DEBUG = False
 
 def print_if(cond, text):
     if cond:
         print(text)
 
 class Model:
-    def __init__(self):
+    def __init__(self, path=None, rescale=True):
         self.vertices = [] # at index (x, y, z)
         self.vertices_texture = [] # at index (u, v)
         self.faces = [] # at index {'v': vertex_index, 'vn': vertex_normal_index, 'vt': vertex_texture_index}
         self.neighbors = [] # at index (n1_face_index, n2_face_index, n3_face_index)
         
+        self.rescale = rescale
+
         self.vertices_for_drawing = [] # the vertices to actual draw f1v1, f1v2, f1v3, f2v1, f2v2, ...
         self.vertices_texture_for_drawing = [] # same but vt
+        if path:
+            self.load_obj(path)
         
     def get_face_vertices(self, face_index):
         face = self.faces[face_index]
@@ -120,11 +125,7 @@ class Model:
                     # the face "face" and the face "face_source" sharing two vertices meaning they are neighbors
                     face_neighbors.append(j)
                 
-                # elif count == 1:
-                #     # 
-            # while len(face_neighbors) < 3:
-            #     face_neighbors.append(i)
-
+            # self.neighbors["index of face"] is a list of the indices of neighbors of the face "index of face"
             self.neighbors.append(face_neighbors)
         
         if normalize_texture:
@@ -137,7 +138,8 @@ class Model:
 
             self.save_obj('output.obj')
         
-        self.preview_size()
+        if self.rescale:
+            self.preview_size()
 
         # create for drawing arrays -> will change to new taignles and new vertices
         _vertices = []
@@ -162,7 +164,7 @@ class Model:
 
         self.vertices_for_drawing = np.array(_vertices)
         self.vertices_texture_for_drawing = np.array(_vertices_texture)
-        print('Done: load object')
+        print(f'Done: load object. verices:{len(self.vertices)}, faces:{len(self.faces)}')
         
     def create_divided_mobius_model(self, divide_factor):
         ''' This is where the main magic of the algorithm is taking action '''
@@ -171,12 +173,12 @@ class Model:
         #                      Mobius Area
         ##########################################################
 
+        debug_state = 0
+
         divided_model = Model()
 
         vertex_index = 0
         face_index = 0
-
-        test_index = 0
 
         # try to find mobiuses
         for face_index, face in enumerate(self.faces):
@@ -214,7 +216,10 @@ class Model:
             middle_rotated = np.array([np.dot(rotation_matrix, i) for i in vertices])
             
             # neighbors:
+            is_edge_face = False
             neighbors_faces_indices = self.get_neighbors(face_index)
+            if len(neighbors_faces_indices) < 3:
+                is_edge_face = True
             neighbors_vertices = [np.array([self.vertices[j['v']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
             # if len(neighbors_vertices) != 3:
@@ -245,14 +250,14 @@ class Model:
             # 4. get everything ready for mobius calculations
             ##########################################################
 
+            if len(self.neighbors[face_index]) != 3:
+                debug_state += 1
+
             neighbors_textures = [np.array([self.vertices_texture[j['vt']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
             triangle_t_vec_2d = middle_rotated
             triangle_t_tex_2d = np.array([np.array(self.vertices_texture[face[i]['vt']]) for i in range(3)])
             
-            if face_index == test_index: debug_triangles_points = []
-            if face_index == test_index: debug_points = [i for i in triangle_t_tex_2d]
-
             triangle_u_vec_2d = None
             triangle_u_tex_2d = None
             if len(rotated_flat_neighbors) >= 1:
@@ -271,6 +276,7 @@ class Model:
                 triangle_w_vec_2d = rotated_flat_neighbors[2]
                 triangle_w_tex_2d = neighbors_textures[2]
 
+            # if triangle is non existant, M_x will be identity by default
             M_t = findMobiusTransform(triangle_t_vec_2d, triangle_t_tex_2d)
             M_u = findMobiusTransform(triangle_u_vec_2d, triangle_u_tex_2d)
             M_v = findMobiusTransform(triangle_v_vec_2d, triangle_v_tex_2d)
@@ -278,19 +284,35 @@ class Model:
 
             # j: the point shared by t, u, v
             edge_j = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d)
-            assert edge_j is not None
+            if edge_j is None: 
+                print(f'error at edge_j {face_index}, {face}')
+                continue
 
             # i: the point shared by t, u, w
-            edge_i = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_w_vec_2d)
-            assert edge_i is not None
+            edge_i = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_w_vec_2d, [edge_j])
+            if edge_i is None:
+                print(f'error at edge_i {face_index}, {face}')
+                continue
 
             # k: the point shared by t, v, w
-            edge_k = get_shared_point(triangle_t_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d)
-            assert edge_k is not None
+            edge_k = get_shared_point(triangle_t_vec_2d, triangle_v_vec_2d, triangle_w_vec_2d, [edge_j, edge_i])
+            if edge_k is None:
+                print(f'error at edge_k {face_index}, {face}')
+                continue
 
             j_complex = to_complex(edge_j)
             i_complex = to_complex(edge_i)
             k_complex = to_complex(edge_k)
+
+            if debug_state == 1:
+                tt = [triangle_t_vec_2d[0], triangle_t_vec_2d[1], triangle_t_vec_2d[2]]
+                tu = [triangle_u_vec_2d[0], triangle_u_vec_2d[1], triangle_u_vec_2d[2]]
+                tv = [triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2]]
+                if not DEBUG:
+                    # tw = [triangle_w_vec_2d[0], triangle_w_vec_2d[1]]
+                    triangles_to_draw = [tt, tu, tv]
+                    Drawer([tt, tu, tv], [edge_i, edge_j, edge_k], points_labels=['i', 'j', 'k'])
+                    debug_state += 1
 
             ##########################################################
             # 5. divide and create new tiangles with mobius texture
@@ -342,37 +364,27 @@ class Model:
                         new_c = new_a + step_bc
                         mobius_new_c = mobius_new_a + mobius_step_bc
                     
-                    if face_index == test_index: debug_triangles_points.append(mobius_new_a)
-                    if face_index == test_index: debug_triangles_points.append(mobius_new_b)
-                    if face_index == test_index: debug_triangles_points.append(mobius_new_c)
                     vt_a = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_a))
                     vt_b = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_b))
                     vt_c = log_ratio_interpolator_primary_and_transform(i_complex, j_complex, k_complex, M_t, M_u, M_v, M_w, to_complex(mobius_new_c))
 
-                    if np.allclose(mobius_new_a, mobius_a):
+                    if np.allclose(mobius_new_a, mobius_a) or np.isnan(vt_a):
                         vt_a = triangle_t_tex_2d[0]
                     else:
                         vt_a = complex_to_vec(vt_a)
-                        if np.isnan(vt_a[0]): vt_a[0] = 0
-                        if np.isnan(vt_a[1]): vt_a[1] = 0
 
-                    if np.allclose(mobius_new_b, mobius_b):
+                    if np.allclose(mobius_new_b, mobius_b) or np.isnan(vt_b):
                         vt_b = triangle_t_tex_2d[1]
                     else:
                         vt_b = complex_to_vec(vt_b)
-                        if np.isnan(vt_b[0]): vt_b[0] = 0
-                        if np.isnan(vt_b[1]): vt_b[1] = 0
                     
-                    if np.allclose(mobius_new_c, mobius_c):
+                    if np.allclose(mobius_new_c, mobius_c) or np.isnan(vt_c):
                         vt_c = triangle_t_tex_2d[2]
                     else:
                         vt_c = complex_to_vec(vt_c)
-                        if np.isnan(vt_c[0]): vt_c[0] = 0
-                        if np.isnan(vt_c[1]): vt_c[1] = 0
 
-                    if face_index == test_index: debug_points.append(vt_a)
-                    if face_index == test_index: debug_points.append(vt_b)
-                    if face_index == test_index: debug_points.append(vt_c)
+                    if is_edge_face and False:
+                        continue
 
                     divided_model.vertices.append(new_a)
                     divided_model.vertices_texture.append(vt_a)
@@ -388,9 +400,55 @@ class Model:
                     vertex_index += 1
                     divided_model.faces.append((f0, f1, f2))
 
+        print(f'before optimization: vertices:{len(divided_model.vertices)}, faces:{len(divided_model.faces)}')
+        divided_model.optimize()
+        print(f'after optimization: vertices:{len(divided_model.vertices)}, faces:{len(divided_model.faces)}')
         return divided_model
 
+    def optimize(self):
+        point_dict = {} # actual points lead to index
+        optimized_vertices = []
+
+        new_point_index = 0
+        for point_index, point in enumerate(self.vertices):
+            if tuple(point) not in point_dict:
+                point_dict[tuple(point)] = new_point_index
+                optimized_vertices.append(point)
+                new_point_index += 1
+            else:
+                continue
+
+        optimized_faces = []
+        for face_index, face in enumerate(self.faces):
+            a = self.vertices[face[0]['v']]
+            b = self.vertices[face[1]['v']]
+            c = self.vertices[face[2]['v']]
+            f1 = point_dict[tuple(a)]
+            f2 = point_dict[tuple(b)]
+            f3 = point_dict[tuple(c)]
+            face = (
+                {'v': f1, 'vt':face[0]['vt']},
+                {'v': f2, 'vt':face[1]['vt']},
+                {'v': f3, 'vt':face[2]['vt']}
+            )
+            optimized_faces.append(face)
+        self.vertices = optimized_vertices
+        self.faces = optimized_faces
+
+
+def optimization_test():
+    model = Model(r'assets/unoptimized.obj', rescale=False)
+
+    print(f'before optimization: vertices:{len(model.vertices)}, faces:{len(model.faces)}')
+    model.optimize()
+    print(f'after optimization: vertices:{len(model.vertices)}, faces:{len(model.faces)}')
+    model.save_obj(r'assets/optimized.obj')
+
 if __name__ == '__main__':
+
+    optimization_test()
+    exit(0)
+
     import pygame
     from random import randint
     pygame.init()

@@ -63,14 +63,26 @@ def load_texture(filename):
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
 
     return texture
 
 def preview(model_path, texture_path):
+    
+    model_undevided_path = None
+    model_undevided = None
+
     model = Model()
     model.load_obj(model_path)
+    wireframe = False
+
+    if '_divided' in model_path:
+        model_undevided_path = model_path.split('_divided')[0] + '.obj'
+        model_undevided = Model()
+        model_undevided.load_obj(model_undevided_path)
 
     with open(r'./Shaders/vertex_shader.glsl', 'r') as v_shader:
         vertex_shader_source = v_shader.read()
@@ -109,10 +121,15 @@ def preview(model_path, texture_path):
     glEnableVertexAttribArray(aVertex) # enable the attrib for rendering
     glEnableVertexAttribArray(aTexCoord) # enable the attrib for rendering
 
+    current_texture = 0
     texture = load_texture(texture_path)
+    texture_b = load_texture(r'./Assets/b.png')
+    texture_r = load_texture(r'./Assets/r.png')
+
+    current_texture = texture
 
     glActiveTexture(GL_TEXTURE0) # select the texture unit GL_TEXTURE0 (the first texture unit)
-    glBindTexture(GL_TEXTURE_2D, texture) # bind it to texture we just loaded
+    glBindTexture(GL_TEXTURE_2D, current_texture) # bind it to texture we just loaded
     glUniform1i(sTexture, 0) # the uniform var sTexture is now linked to the texture (1 integer)
 
     glEnable(GL_DEPTH_TEST)
@@ -130,6 +147,8 @@ def preview(model_path, texture_path):
             if event.type == pygame.MOUSEWHEEL:
                     view_z += event.y * 10
                     view_matrix[-1, :-1] = (0, 0, view_z)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+                wireframe = not wireframe
                 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_ESCAPE]:
@@ -147,7 +166,22 @@ def preview(model_path, texture_path):
         glUniformMatrix4fv(uMVMatrix, 1, GL_FALSE, mv_matrix) # the uniform var uMVMatrix is now linked to mv_matrix
         glUniformMatrix4fv(uPMatrix, 1, GL_FALSE, projection_matrix) # the uniform var uPMatrix is now linked to projection_matrix
 
+        glActiveTexture(GL_TEXTURE0) # select the texture unit GL_TEXTURE0 (the first texture unit)
+        glBindTexture(GL_TEXTURE_2D, texture) # bind it to texture we just loaded
+        glUniform1i(sTexture, 0) # the uniform var sTexture is now linked to the texture (1 integer)
+        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
         glDrawArrays(GL_TRIANGLES, 0, len(model.vertices_for_drawing)) # draw 
+
+        if wireframe:
+
+            glLineWidth(5)
+            glActiveTexture(GL_TEXTURE0) # select the texture unit GL_TEXTURE0 (the first texture unit)
+            glBindTexture(GL_TEXTURE_2D, texture_b) # bind it to texture we just loaded
+            glUniform1i(sTexture, 0) # the uniform var sTexture is now linked to the texture (1 integer)
+            glPolygonMode(GL_FRONT_AND_BACK,GL_LINE)
+            glDrawArrays(GL_TRIANGLES, 0, len(model.vertices_for_drawing)) # draw 
+
+
 
         pygame.display.flip()
     pygame.quit()

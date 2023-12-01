@@ -2,18 +2,25 @@ import cmath
 import numpy as np
 EPSILON = 1e-5
 
+def get_identity():
+    identity = np.array([
+        [1.0+0.0j, 0.0+0.0j],
+        [0.0+0.0j, 1.0+0.0j]
+    ])
+    # return identity
+    return np.eye(2, dtype=complex)
+
 def to_complex(vec2):
     return vec2[0] + vec2[1] * 1j
 
 def complex_to_vec(c: complex) -> np.ndarray:
     return np.array([np.real(c), np.imag(c)])
 
-def findMobiusTransform(z, w):
+def findMobiusTransform(z, w, default=None):
     if z is None:
-        identity = np.array([
-        [1.0+0.0j, 0.0+0.0j],
-        [0.0+0.0j, 1.0+0.0j]
-        ])
+        if default is not None:
+            return default
+        identity = get_identity()
         return identity
     return _findMobiusTransform(z[0], z[1], z[2], w[0], w[1], w[2])
 
@@ -115,10 +122,7 @@ def exp_matrix(mat: np.ndarray) -> np.ndarray:
 def log_matrix(mat: np.ndarray) -> np.ndarray:
 
     # if identity, return identity
-    identity = np.array([
-        [1.0+0.0j, 0.0+0.0j],
-        [0.0+0.0j, 1.0+0.0j]
-    ])
+    identity = get_identity()
     if np.allclose(mat, identity): 
         return identity
     
@@ -162,10 +166,7 @@ def log_ratio_interpolator(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     try:
         mobius_ratio = np.matmul(a, np.linalg.inv(b))
     except Exception:
-        identity = np.array([
-            [1.0+0.0j, 0.0+0.0j],
-            [0.0+0.0j, 1.0+0.0j]
-        ])
+        identity = get_identity()
         mobius_ratio = identity
 
     real = np.real(mobius_ratio)

@@ -1,5 +1,6 @@
 import pygame
 from random import randint
+import Tools.desmos_tools as dt
 
 def random_color():
     return (randint(100, 220), randint(100, 220), randint(100, 220))
@@ -8,7 +9,7 @@ def three_decimals(f):
     return "{:.3f}".format(f)
 
 class Drawer:
-    def __init__(self, triangles_to_draw = [], points_to_draw = [], edges_to_draw = [], file='test'):
+    def __init__(self, triangles_to_draw = [], points_to_draw = [], edges_to_draw = [], file='test', points_labels=[]):
         pygame.font.init()
         # draw them all
         if len(triangles_to_draw) > 0:
@@ -72,14 +73,21 @@ class Drawer:
             for i, p in enumerate(points):
                 text = font.render(f'[{i}]({three_decimals(org_points[i][0])}, {three_decimals(org_points[i][1])})', True, (0,0,0))
                 surf.blit(text, p)
+            print(dt.polygon_to_desmos_2d(triangle))
 
-        for point in points_to_draw:
+        for i, point in enumerate(points_to_draw):
             transformed = self.p(point)
             x = transformed[0]
             y = transformed[1]
             pygame.draw.circle(surf, (255,0,0), (x,y), 5)
-            text = font.render(f'({three_decimals(point[0])}, {three_decimals(point[1])})', True, (0,0,0))
-            surf.blit(text, transformed)
+            label = ""
+            try:
+                label = points_labels[i]
+            except:
+                pass
+
+            text = font.render(f'{label}:({three_decimals(point[0])}, {three_decimals(point[1])})', True, (0,0,0))
+            surf.blit(text, (x + 15, y - 15))
 
         for edge in edges_to_draw:
             start = self.p(edge[0])
