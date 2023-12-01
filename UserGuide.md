@@ -37,7 +37,3 @@ used to preview the model using a supplied tool to view 3d models.
 looks for the subdivided model and previews it.
 
 * in any incorrect input or button a pop message will be displayed.
-
-```cmd
-py main3D.py --model-path <path to model> --grid-size <size of powder grid> --grid-points <grid points in row> --animation-speed <speed of animation [1-100]> [OPTIONAL] --rotation input <path to rotations file>
-```
