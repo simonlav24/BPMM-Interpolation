@@ -1,11 +1,6 @@
 import numpy as np
 from rotatetoalign import *
 from mobius import *
-#from desmos_tools import *
-from Tools.drawer_helper import Drawer
-
-DESMOS_PRINT = True
-DEBUG = False
 
 def print_if(cond, text):
     if cond:
@@ -173,8 +168,6 @@ class Model:
         #                      Mobius Area
         ##########################################################
 
-        debug_state = 0
-
         divided_model = Model()
 
         vertex_index = 0
@@ -250,9 +243,6 @@ class Model:
             # 4. get everything ready for mobius calculations
             ##########################################################
 
-            if len(self.neighbors[face_index]) != 3:
-                debug_state += 1
-
             neighbors_textures = [np.array([self.vertices_texture[j['vt']] for j in self.faces[i]]) for i in neighbors_faces_indices]
 
             triangle_t_vec_2d = middle_rotated
@@ -276,11 +266,11 @@ class Model:
                 triangle_w_vec_2d = rotated_flat_neighbors[2]
                 triangle_w_tex_2d = neighbors_textures[2]
 
-            # if triangle is non existant, M_x will be identity by default
+            # if triangle is non existant, M_t will be identity by default
             M_t = findMobiusTransform(triangle_t_vec_2d, triangle_t_tex_2d)
-            M_u = findMobiusTransform(triangle_u_vec_2d, triangle_u_tex_2d)
-            M_v = findMobiusTransform(triangle_v_vec_2d, triangle_v_tex_2d)
-            M_w = findMobiusTransform(triangle_w_vec_2d, triangle_w_tex_2d)
+            M_u = findMobiusTransform(triangle_u_vec_2d, triangle_u_tex_2d, M_t)
+            M_v = findMobiusTransform(triangle_v_vec_2d, triangle_v_tex_2d, M_t)
+            M_w = findMobiusTransform(triangle_w_vec_2d, triangle_w_tex_2d, M_t)
 
             # j: the point shared by t, u, v
             edge_j = get_shared_point(triangle_t_vec_2d, triangle_u_vec_2d, triangle_v_vec_2d)
@@ -303,16 +293,6 @@ class Model:
             j_complex = to_complex(edge_j)
             i_complex = to_complex(edge_i)
             k_complex = to_complex(edge_k)
-
-            if debug_state == 1:
-                tt = [triangle_t_vec_2d[0], triangle_t_vec_2d[1], triangle_t_vec_2d[2]]
-                tu = [triangle_u_vec_2d[0], triangle_u_vec_2d[1], triangle_u_vec_2d[2]]
-                tv = [triangle_v_vec_2d[0], triangle_v_vec_2d[1], triangle_v_vec_2d[2]]
-                if not DEBUG:
-                    # tw = [triangle_w_vec_2d[0], triangle_w_vec_2d[1]]
-                    triangles_to_draw = [tt, tu, tv]
-                    Drawer([tt, tu, tv], [edge_i, edge_j, edge_k], points_labels=['i', 'j', 'k'])
-                    debug_state += 1
 
             ##########################################################
             # 5. divide and create new tiangles with mobius texture

@@ -3,12 +3,10 @@ import numpy as np
 EPSILON = 1e-5
 
 def get_identity():
-    identity = np.array([
-        [1.0+0.0j, 0.0+0.0j],
-        [0.0+0.0j, 1.0+0.0j]
-    ])
-    # return identity
     return np.eye(2, dtype=complex)
+
+def get_zero():
+    return np.zeros((2, 2), dtype=complex)
 
 def to_complex(vec2):
     return vec2[0] + vec2[1] * 1j
@@ -81,6 +79,8 @@ def transform(z: complex, mat):
     return (a * z + b) / (c * z + d)
 
 def exp_matrix(mat: np.ndarray) -> np.ndarray:
+    if np.allclose(mat, get_zero()):
+        return get_identity()
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]
     determinant = mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0]
@@ -124,7 +124,7 @@ def log_matrix(mat: np.ndarray) -> np.ndarray:
     # if identity, return identity
     identity = get_identity()
     if np.allclose(mat, identity): 
-        return identity
+        return get_zero()
     
     # compute eigenvalues
     trace = mat[0][0] + mat[1][1]

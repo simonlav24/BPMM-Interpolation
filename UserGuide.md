@@ -4,9 +4,9 @@ Requirements:
 
 * Python 3.10 or above
 * numpy
+* pyPillow
 * PySimpleGui (for gui)
-* pygame+opengl
-* pyPillow (for images)
+* pygame+opengl (for built in quick visualizer)
 
 ### Running The launcher
 
